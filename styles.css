@@ -1,0 +1,457 @@
+/* EchoVerse Album Player — VDay + mystic-synchronicity theming
+   Notes:
+   - Uses CSS variables so theme toggles are instant.
+   - No borders-as-frames; edges stay clean with soft lines + glows.
+*/
+
+:root{
+    --bg:#0b0c10;
+    --panel:#10131b;
+    --panel2:#0f1218;
+    --text:#e9eef7;
+    --muted:#aeb7c7;
+    --line:rgba(255,255,255,.08);
+    --line2:rgba(255,255,255,.14);
+    --glow:rgba(255,255,255,.08);
+  
+    --accent:#ff2bd6;
+    --accent2:#26e6ff;
+    --accent3:#ffcc66;
+  
+    --good:#6bffb0;
+    --warn:#ffcc66;
+  
+    --shadow: 0 18px 45px rgba(0,0,0,.45);
+    --radius:20px;
+    --radius2:28px;
+  
+    --noise: radial-gradient(900px 500px at 20% 0%, var(--glow), transparent 60%),
+             radial-gradient(700px 480px at 90% 20%, rgba(255,255,255,.06), transparent 60%);
+  
+    --bg-grad: linear-gradient(180deg, var(--bg), #000 120%);
+  
+    --sigil-glow: drop-shadow(0 0 18px rgba(38,230,255,.18))
+                  drop-shadow(0 0 36px rgba(255,43,214,.12));
+  }
+  
+  /* Valentine / “Love” theme — velvet + rose-gold + soft mystic glow */
+  [data-theme="love"]{
+    --bg:#120817;
+    --panel:#1a0e20;
+    --panel2:#140a18;
+    --text:#ffeefb;
+    --muted:#e9bfe2;
+  
+    --accent:#ff4fd8;      /* velvet pink */
+    --accent2:#ffcc66;     /* rose gold */
+    --accent3:#7dffdf;     /* mint aura */
+  
+    --line:rgba(255,255,255,.10);
+    --line2:rgba(255,255,255,.18);
+    --glow:rgba(255,79,216,.18);
+  
+    --noise: radial-gradient(900px 520px at 20% 0%, rgba(255,79,216,.18), transparent 60%),
+             radial-gradient(760px 520px at 90% 20%, rgba(255,204,102,.10), transparent 62%),
+             radial-gradient(520px 420px at 55% 10%, rgba(125,255,223,.08), transparent 60%);
+  
+    --bg-grad: linear-gradient(180deg, var(--bg), #050108 130%);
+  
+    --sigil-glow: drop-shadow(0 0 18px rgba(255,79,216,.22))
+                  drop-shadow(0 0 40px rgba(255,204,102,.14));
+  }
+  
+  /* Anti-Love theme — high contrast black + hot pink + teal */
+  [data-theme="anti"]{
+    --bg:#05060a;
+    --panel:#0b0d12;
+    --panel2:#07090d;
+    --text:#f3f6ff;
+    --muted:#a7b0c7;
+  
+    --accent:#ff2bd6;
+    --accent2:#26e6ff;
+    --accent3:#ffcc66;
+  
+    --line:rgba(255,255,255,.08);
+    --line2:rgba(255,255,255,.16);
+    --glow:rgba(38,230,255,.14);
+  
+    --noise: radial-gradient(900px 520px at 20% 0%, rgba(38,230,255,.14), transparent 60%),
+             radial-gradient(760px 520px at 90% 20%, rgba(255,43,214,.10), transparent 62%);
+  
+    --bg-grad: linear-gradient(180deg, var(--bg), #000 120%);
+  
+    --sigil-glow: drop-shadow(0 0 18px rgba(38,230,255,.20))
+                  drop-shadow(0 0 40px rgba(255,43,214,.12));
+  }
+  
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: var(--noise), var(--bg-grad);
+    color:var(--text);
+    overflow-x:hidden;
+  }
+  
+  /* Subtle “synchronicity shimmer” overlay */
+  body::before{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(2px 2px at 12% 22%, rgba(255,255,255,.10), transparent 60%),
+      radial-gradient(2px 2px at 42% 18%, rgba(255,255,255,.08), transparent 60%),
+      radial-gradient(2px 2px at 68% 28%, rgba(255,255,255,.10), transparent 60%),
+      radial-gradient(2px 2px at 82% 14%, rgba(255,255,255,.08), transparent 60%);
+    opacity:.55;
+    filter: blur(.2px);
+    mix-blend-mode: screen;
+  }
+  
+  /* Soft “VDay aura bloom” only in love mode */
+  [data-theme="love"] body::after{
+    content:"";
+    position:fixed;inset:-20vh;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(500px 420px at 20% 40%, rgba(255,79,216,.10), transparent 65%),
+      radial-gradient(520px 440px at 70% 35%, rgba(255,204,102,.08), transparent 65%),
+      radial-gradient(440px 380px at 45% 70%, rgba(125,255,223,.06), transparent 65%);
+    opacity:.85;
+    mix-blend-mode: screen;
+    filter: blur(1px);
+  }
+  
+  a{color:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 14px 110px; position:relative; z-index:1;}
+  
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    backdrop-filter: blur(14px);
+    background: linear-gradient(180deg, rgba(0,0,0,.65), rgba(0,0,0,.20));
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:1100px;margin:0 auto;padding:14px 14px;
+    display:flex;gap:10px;align-items:center;justify-content:space-between;
+  }
+  
+  .brand{display:flex;flex-direction:column;gap:2px;line-height:1.05}
+  .brand .kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .brand .title{font-size:18px;font-weight:800}
+  
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  
+  .btn{
+    border:1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    color:var(--text);
+    border-radius:999px;
+    padding:10px 12px;
+    font-size:13px;
+    cursor:pointer;
+    transition: transform .08s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    user-select:none;
+  }
+  .btn:active{transform: translateY(1px)}
+  .btn.primary{
+    border-color: var(--line2);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.05) inset,
+      0 10px 30px rgba(0,0,0,.25);
+  }
+  .btn.badge{padding:9px 10px;display:flex;gap:8px;align-items:center}
+  
+  .dot{
+    width:10px;height:10px;border-radius:999px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 18px rgba(255,255,255,.12);
+  }
+  
+  .grid{
+    display:grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap:14px;
+    margin-top:18px;
+  }
+  @media (max-width: 980px){ .grid{grid-template-columns: 1fr} }
+  
+  .card{
+    border:1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border-radius: var(--radius2);
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+  
+  .card .hd{
+    padding:16px 16px 10px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  }
+  
+  .meta{display:flex;flex-direction:column;gap:6px}
+  .meta .album{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .meta .name{font-size:20px;font-weight:900}
+  .meta .desc{font-size:13px;color:var(--muted);max-width:56ch}
+  
+  .pill{
+    font-size:12px;color:var(--muted);
+    border:1px solid var(--line);
+    padding:8px 10px;border-radius:999px;
+    background: rgba(0,0,0,.15);
+    white-space:nowrap;
+  }
+  
+  .hero{
+    display:grid;grid-template-columns: 140px 1fr;
+    gap:14px;
+    padding:0 16px 16px;
+    align-items:center;
+  }
+  @media (max-width: 520px){ .hero{grid-template-columns: 110px 1fr} }
+  
+  .cover{
+    width:140px;height:140px;border-radius:18px;
+    border:1px solid var(--line);
+    background: #0a0a0a;
+    box-shadow: 0 22px 60px rgba(0,0,0,.55);
+    overflow:hidden;
+  }
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  
+  .now{display:flex;flex-direction:column;gap:10px}
+  .now .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .now .tracktitle{font-weight:950;font-size:16px}
+  .now .sub{font-size:12px;color:var(--muted)}
+  
+  .playerbar{
+    border-top:1px solid var(--line);
+    background: rgba(0,0,0,.20);
+    padding:12px 14px 14px;
+  }
+  
+  .seek{
+    width:100%;
+    appearance:none;
+    height:6px;border-radius:999px;
+    background: rgba(255,255,255,.12);
+    outline:none;
+    cursor:pointer;
+  }
+  .seek::-webkit-slider-thumb{
+    appearance:none;
+    width:18px;height:18px;border-radius:999px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border: 1px solid rgba(255,255,255,.25);
+    box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  }
+  
+  .time{
+    display:flex;justify-content:space-between;
+    font-size:12px;color:var(--muted);
+    margin-top:8px;
+  }
+  
+  .playerbtns{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .playerbtns .btn{padding:10px 12px}
+  
+  .tracks{padding:12px}
+  
+  .track{
+    display:grid;
+    grid-template-columns: 44px 1fr auto;
+    gap:12px;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(0,0,0,.18);
+    cursor:pointer;
+    transition: transform .08s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    margin-bottom:10px;
+  }
+  .track:hover{
+    border-color: var(--line2);
+    box-shadow: 0 10px 26px rgba(0,0,0,.25);
+  }
+  .track:active{transform: translateY(1px)}
+  .track.active{
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    border-color: rgba(255,255,255,.24);
+  }
+  
+  .tn{
+    width:44px;height:44px;border-radius:12px;
+    border:1px solid var(--line);
+    overflow:hidden;background:#0a0a0a;
+  }
+  .tn img{width:100%;height:100%;object-fit:cover;display:block}
+  
+  .tmain{display:flex;flex-direction:column;gap:3px}
+  .tname{font-weight:900}
+  .tmeta{font-size:12px;color:var(--muted)}
+  .tcta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+  
+  .badge{
+    padding:6px 10px;border-radius:999px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.20);
+  }
+  
+  .side{display:flex;flex-direction:column;gap:14px}
+  
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;padding:12px 12px 0}
+  
+  .panel{padding:0 12px 12px}
+  
+  .section{
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(0,0,0,.18);
+  }
+  
+  .section h3{
+    margin:0 0 8px;
+    font-size:14px;
+    letter-spacing:.10em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  
+  .section .big{font-weight:950;font-size:16px}
+  .section p{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+  
+  /* Drawers */
+  .drawer{
+    position:fixed;inset:0;z-index:50;
+    display:none;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(10px);
+  }
+  .drawer.open{display:block}
+  
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;
+    max-height: 84vh;
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    border:1px solid var(--line);
+    border-bottom:none;
+    border-radius: 26px 26px 0 0;
+    padding:14px;
+    overflow:auto;
+    box-shadow: 0 -25px 80px rgba(0,0,0,.55);
+  }
+  
+  .sheet .shd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .sheet .shd .ttl{font-weight:950}
+  
+  .sheet pre{
+    white-space:pre-wrap;
+    margin:0;
+    font-size:13px;
+    line-height:1.55;
+    color: var(--text);
+  }
+  
+  .footerbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:25;
+    border-top:1px solid var(--line);
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(14px);
+  }
+  
+  .footerbar .inner{
+    max-width:1100px;margin:0 auto;
+    padding:10px 14px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  }
+  
+  .small{font-size:12px;color:var(--muted)}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+  
+  .kbd{
+    font-size:12px;
+    border:1px solid var(--line);
+    padding:6px 10px;border-radius:999px;
+    color:var(--muted);
+    background: rgba(0,0,0,.20);
+  }
+  
+  /* Optional: apply “sigil glow” to any SVG/icon you mark with class */
+  .sigil { filter: var(--sigil-glow); }
+  
+  /* Reduce motion preference */
+  @media (prefers-reduced-motion: reduce){
+    *{scroll-behavior:auto !important; transition:none !important;}
+  }
+  /* ===== Track Aura Layer =====
+   These are set dynamically by JS per-track.
+*/
+:root{
+    --track-a1: var(--accent);
+    --track-a2: var(--accent2);
+    --track-glow: rgba(255,255,255,.10);
+  }
+  
+  /* Energy field overlay (very subtle) */
+  .wrap::before{
+    content:"";
+    position:fixed; inset:-20vh;
+    pointer-events:none;
+    z-index:0;
+    background:
+      radial-gradient(520px 420px at 20% 30%, color-mix(in oklab, var(--track-a1) 18%, transparent), transparent 65%),
+      radial-gradient(560px 460px at 80% 25%, color-mix(in oklab, var(--track-a2) 16%, transparent), transparent 68%),
+      radial-gradient(520px 420px at 45% 78%, rgba(255,255,255,.06), transparent 70%);
+    opacity:.65;
+    filter: blur(1px);
+    mix-blend-mode: screen;
+    animation: evFloat 9s ease-in-out infinite;
+  }
+  
+  @keyframes evFloat{
+    0%   { transform: translate3d(0,0,0) scale(1); }
+    50%  { transform: translate3d(0,-14px,0) scale(1.02); }
+    100% { transform: translate3d(0,0,0) scale(1); }
+  }
+  
+  /* Make key UI elements pull track aura */
+  .dot{
+    background: linear-gradient(180deg, var(--track-a1), var(--track-a2));
+  }
+  .seek::-webkit-slider-thumb{
+    background: linear-gradient(180deg, var(--track-a1), var(--track-a2));
+  }
+  .btn.primary{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.05) inset,
+      0 0 24px color-mix(in oklab, var(--track-a1) 18%, transparent),
+      0 10px 30px rgba(0,0,0,.25);
+  }
+  
+  /* Sigil chip */
+  .sigil-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;height:34px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.22);
+    box-shadow: 0 0 22px color-mix(in oklab, var(--track-a2) 14%, transparent);
+  }
+  .sigil-chip svg{
+    width:20px;height:20px;
+    color: color-mix(in oklab, var(--track-a1) 55%, var(--text));
+    filter: var(--sigil-glow);
+  }
+  
+  /* Small sigil on track cards */
+  .track .sigil-mini{
+    width:16px;height:16px;
+    color: color-mix(in oklab, var(--track-a2) 55%, var(--text));
+    opacity:.9;
+    filter: var(--sigil-glow);
+  }
+  

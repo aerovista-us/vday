@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <link rel="stylesheet" href="./styles.css">
+  <title>EchoVerse • Album Player</title>
+
+  <!-- ✅ Umami (replace with your values) -->
+  <script
+    defer
+    src="UMAMI_SCRIPT_URL"
+    data-website-id="UMAMI_WEBSITE_ID"
+  ></script>
+<style></style>
+</head>
+
+<body data-theme="anti">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="kicker">EchoVerse • AeroVista</div>
+        <div class="title">Album Experience Player</div>
+      </div>
+      <div class="controls">
+        <button class="btn badge primary" id="themeBtn" title="Toggle theme">
+          <span class="dot"></span>
+          <span id="themeLabel">Anti-Love</span>
+        </button>
+        <button class="btn" id="lyricsBtn">Lyrics</button>
+        <button class="btn" id="conceptBtn">Concept</button>
+        <button class="btn" id="statsBtn">Stats</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="grid">
+      <!-- LEFT: Player -->
+      <div class="card" id="playerCard">
+        <div class="hd">
+          <div class="meta">
+            <div class="album" id="albumTitle">Loading…</div>
+            <div class="name" id="albumSubtitle">Please wait</div>
+            <div class="desc" id="albumDesc"></div>
+          </div>
+          <div class="pill" id="albumTag">JSON-driven • GitHub Pages</div>
+        </div>
+
+        <div class="hero">
+          <div class="cover"><img id="coverImg" alt="cover"></div>
+          <div class="now">
+            <div class="row">
+              <div class="tracktitle" id="nowTitle">—</div>
+              <span class="badge" id="nowIndex">Track —</span>
+              <span class="sigil-chip" id="sigilChip" aria-hidden="true"></span>
+            </div>
+            <div class="sub" id="nowMeta">—</div>
+            <div class="playerbtns">
+              <button class="btn" id="prevBtn">Prev</button>
+              <button class="btn primary" id="playBtn">Play</button>
+              <button class="btn" id="nextBtn">Next</button>
+              <button class="btn" id="restartBtn">Restart</button>
+            </div>
+            <div class="small mono" id="fileHint"></div>
+          </div>
+        </div>
+
+        <div class="playerbar">
+          <input class="seek" id="seek" type="range" min="0" max="1000" value="0" />
+          <div class="time">
+            <span id="tCur">0:00</span>
+            <span id="tDur">0:00</span>
+          </div>
+        </div>
+
+        <div class="tracks" id="tracks"></div>
+      </div>
+
+      <!-- RIGHT: Panels -->
+      <div class="side">
+        <div class="card">
+          <div class="tabs">
+            <button class="btn tab primary" data-view="about">About</button>
+            <button class="btn tab" data-view="gallery">Gallery</button>
+          </div>
+          <div class="panel">
+            <div class="section" id="aboutView">
+              <h3>Now Playing</h3>
+              <div class="big" id="mantra">—</div>
+              <p id="soundStyle">—</p>
+              <p class="small" id="tip">Tip: Tap any track to play. Theme toggle changes the whole mood.</p>
+            </div>
+
+            <div class="section" id="galleryView" style="display:none">
+              <h3>Cover Gallery</h3>
+              <p class="small">Quick grid of covers (pulled from album.json).</p>
+              <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel">
+            <div class="section">
+              <h3>Estimated Usage</h3>
+              <p class="small">This is a local estimate (based on plays tracked in your browser).</p>
+              <div class="big" id="estGB">0.00 GB</div>
+              <p class="small" id="estNote">Enable Umami to see real “plays” across everyone; this estimate is just your device.</p>
+              <button class="btn" id="resetLocalStats">Reset Local Stats</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawers -->
+  <div class="drawer" id="lyricsDrawer" aria-hidden="true">
+    <div class="sheet">
+      <div class="shd">
+        <div class="ttl">Lyrics</div>
+        <button class="btn" data-close="lyricsDrawer">Close</button>
+      </div>
+      <pre id="lyricsText"></pre>
+    </div>
+  </div>
+
+  <div class="drawer" id="conceptDrawer" aria-hidden="true">
+    <div class="sheet">
+      <div class="shd">
+        <div class="ttl">Concept</div>
+        <button class="btn" data-close="conceptDrawer">Close</button>
+      </div>
+      <div class="section" style="margin-bottom:10px">
+        <h3>Core</h3>
+        <div class="big" id="conceptCore">—</div>
+        <p id="conceptOpp">—</p>
+      </div>
+      <div class="section">
+        <h3>Takeaway</h3>
+        <pre id="conceptNotes"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer" id="statsDrawer" aria-hidden="true">
+    <div class="sheet">
+      <div class="shd">
+        <div class="ttl">Stats</div>
+        <button class="btn" data-close="statsDrawer">Close</button>
+      </div>
+      <div class="section">
+        <h3>Umami Events Fired</h3>
+        <p class="small">If Umami is blocked, events won’t land—player still works.</p>
+        <pre id="eventLog" class="mono"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerbar">
+    <div class="inner">
+      <div class="small">EchoVerse Player • JSON-driven • GitHub Pages friendly</div>
+      <div class="kbd mono">Space: Play/Pause · ←/→: Seek 5s · N/P: Next/Prev</div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // --------- Utility functions ----------
+    function applyAura(track){
+      const a1 = track?.aura?.a1;
+      const a2 = track?.aura?.a2;
+      if (a1) document.documentElement.style.setProperty("--track-a1", a1);
+      if (a2) document.documentElement.style.setProperty("--track-a2", a2);
+    }
+
+    function svgToEl(svgString){
+      const wrap = document.createElement("span");
+      wrap.innerHTML = svgString || "";
+      const svg = wrap.querySelector("svg");
+      return svg || null;
+    }
+
+    // --------- Umami helpers ----------
+    const eventLog = [];
+    function umamiTrack(eventName, data = {}) {
+      try {
+        if (window.umami && typeof window.umami.track === "function") {
+          window.umami.track(eventName, data);
+          eventLog.push({ t: new Date().toISOString(), eventName, data });
+          renderEventLog();
+        } else {
+          // Still log locally so you can confirm intent.
+          eventLog.push({ t: new Date().toISOString(), eventName: eventName + " (local-only)", data });
+          renderEventLog();
+        }
+      } catch (e) {
+        eventLog.push({ t: new Date().toISOString(), eventName: eventName + " (err)", data: { error: String(e) } });
+        renderEventLog();
+      }
+    }
+    function renderEventLog() {
+      $("eventLog").textContent = eventLog.slice(-30).map(x => `${x.t}  ${x.eventName}  ${JSON.stringify(x.data)}`).join("\n");
+    }
+
+    // --------- State ----------
+    const audio = $("audio");
+    let album = null;
+    let idx = 0;
+    let milestones = new Set(); // progress milestones for current track
+    let theme = localStorage.getItem("ev_theme") || "anti";
+
+    // Local usage estimate (per device)
+    const LS_KEY = "ev_local_usage_v1";
+    const localUsage = JSON.parse(localStorage.getItem(LS_KEY) || "{}"); // trackId -> bytesServedEstimate
+
+    function saveLocalUsage() {
+      localStorage.setItem(LS_KEY, JSON.stringify(localUsage));
+      renderLocalEstimate();
+    }
+
+    function bytesToGB(bytes){ return bytes / (1024*1024*1024); }
+    function renderLocalEstimate() {
+      const totalBytes = Object.values(localUsage).reduce((a,b)=>a+(Number(b)||0), 0);
+      $("estGB").textContent = bytesToGB(totalBytes).toFixed(2) + " GB";
+    }
+
+    function setTheme(t){
+      theme = t;
+      document.body.setAttribute("data-theme", theme);
+      localStorage.setItem("ev_theme", theme);
+      $("themeLabel").textContent = theme === "love" ? "Love" : "Anti-Love";
+      umamiTrack("theme_toggle", { theme });
+    }
+
+    // --------- UI render ----------
+    function renderTracks(){
+      const el = $("tracks");
+      el.innerHTML = "";
+      album.tracks.forEach((tr, i) => {
+        const row = document.createElement("div");
+        row.className = "track" + (i===idx ? " active" : "");
+        row.innerHTML = `
+          <div class="tn"><img alt="" src="${tr.cover}"></div>
+          <div class="tmain">
+            <div class="tname">${String(i+1).padStart(2,"0")} • ${tr.title}</div>
+            <div class="tmeta">${tr.concept_core || ""}${tr.opposing ? "  ·  vs  " + tr.opposing : ""}</div>
+          </div>
+          <div class="tcta">
+            <span class="badge">${tr.duration_hint || "—"}</span>
+            ${tr.sigil_svg ? `<span class="sigil-mini">${tr.sigil_svg}</span>` : ""}
+          </div>
+        `;
+        row.onclick = () => loadTrack(i, true);
+        el.appendChild(row);
+      });
+      applyAura(album.tracks[idx]);
+    }
+
+    function renderGallery(){
+      const g = $("galleryGrid");
+      g.innerHTML = "";
+      album.tracks.forEach((tr, i) => {
+        const a = document.createElement("a");
+        a.href = tr.cover;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.style.display = "block";
+        a.innerHTML = `<img alt="" src="${tr.cover}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;border:1px solid var(--line)">`;
+        g.appendChild(a);
+      });
+    }
+
+    function renderNow(){
+      const tr = album.tracks[idx];
+      applyAura(tr);
+      $("coverImg").src = tr.cover;
+      $("nowTitle").textContent = tr.title;
+      $("nowIndex").textContent = "Track " + (idx+1) + " / " + album.tracks.length;
+      $("nowMeta").textContent = [tr.concept_core, tr.opposing ? "vs " + tr.opposing : null].filter(Boolean).join(" • ");
+      $("mantra").textContent = tr.mantra || "—";
+      $("soundStyle").textContent = tr.sound_style || "—";
+      $("lyricsText").textContent = tr.lyrics || "—";
+      $("conceptCore").textContent = tr.concept_core || "—";
+      $("conceptOpp").textContent = tr.opposing ? ("Opposing: " + tr.opposing) : "—";
+      $("conceptNotes").textContent = tr.takeaway || "—";
+      $("fileHint").textContent = tr.audio;
+      const chip = $("sigilChip");
+      chip.innerHTML = "";
+      const svg = svgToEl(tr.sigil_svg);
+      if (svg) chip.appendChild(svg);
+      milestones = new Set();
+      $("tCur").textContent = "0:00";
+      $("tDur").textContent = "0:00";
+      $("seek").value = 0;
+      // update active row highlighting
+      document.querySelectorAll(".track").forEach((x, i) => x.classList.toggle("active", i===idx));
+    }
+
+    function fmtTime(s){
+      if (!isFinite(s) || s < 0) return "0:00";
+      const m = Math.floor(s/60);
+      const r = Math.floor(s%60);
+      return `${m}:${String(r).padStart(2,"0")}`;
+    }
+
+    function setPlayBtn(playing){
+      $("playBtn").textContent = playing ? "Pause" : "Play";
+    }
+
+    // --------- Core actions ----------
+    async function boot(){
+      setTheme(theme);
+
+      // Tabs
+      document.querySelectorAll(".tab").forEach(btn=>{
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab").forEach(b=>b.classList.remove("primary"));
+          btn.classList.add("primary");
+          const view = btn.getAttribute("data-view");
+          $("aboutView").style.display = view === "about" ? "block" : "none";
+          $("galleryView").style.display = view === "gallery" ? "block" : "none";
+          if (view === "gallery") renderGallery();
+          umamiTrack("view_switch", { view });
+        });
+      });
+
+      // Drawers
+      $("lyricsBtn").onclick = () => openDrawer("lyricsDrawer");
+      $("conceptBtn").onclick = () => openDrawer("conceptDrawer");
+      $("statsBtn").onclick = () => openDrawer("statsDrawer");
+      document.querySelectorAll("[data-close]").forEach(b=>{
+        b.onclick = () => closeDrawer(b.getAttribute("data-close"));
+      });
+      document.querySelectorAll(".drawer").forEach(d=>{
+        d.addEventListener("click", (e)=>{
+          if (e.target === d) closeDrawer(d.id);
+        });
+      });
+
+      $("themeBtn").onclick = () => setTheme(theme === "anti" ? "love" : "anti");
+
+      // Player controls
+      $("playBtn").onclick = togglePlay;
+      $("prevBtn").onclick = () => prev(true);
+      $("nextBtn").onclick = () => next(true);
+      $("restartBtn").onclick = () => { audio.currentTime = 0; umamiTrack("restart", ctx()); };
+      $("seek").addEventListener("input", () => {
+        if (!audio.duration) return;
+        const p = Number($("seek").value) / 1000;
+        audio.currentTime = p * audio.duration;
+      });
+
+      $("resetLocalStats").onclick = () => {
+        for (const k of Object.keys(localUsage)) delete localUsage[k];
+        saveLocalUsage();
+        umamiTrack("local_stats_reset", {});
+      };
+
+      // Keyboard
+      window.addEventListener("keydown", (e)=>{
+        const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
+        if (tag === "input" || tag === "textarea") return;
+
+        if (e.code === "Space"){ e.preventDefault(); togglePlay(); }
+        if (e.key === "ArrowLeft"){ audio.currentTime = Math.max(0, audio.currentTime - 5); }
+        if (e.key === "ArrowRight"){ audio.currentTime = Math.min(audio.duration||0, audio.currentTime + 5); }
+        if (e.key.toLowerCase() === "n"){ next(true); }
+        if (e.key.toLowerCase() === "p"){ prev(true); }
+      });
+
+      // Audio events
+      audio.addEventListener("loadedmetadata", () => {
+        $("tDur").textContent = fmtTime(audio.duration);
+      });
+      audio.addEventListener("timeupdate", () => {
+        if (!audio.duration) return;
+        $("tCur").textContent = fmtTime(audio.currentTime);
+        $("seek").value = Math.floor((audio.currentTime / audio.duration) * 1000);
+
+        // milestone events (25/50/75/100)
+        const pct = (audio.currentTime / audio.duration) * 100;
+        const m = [25,50,75,95];
+        for (const p of m){
+          if (pct >= p && !milestones.has(p)){
+            milestones.add(p);
+            umamiTrack("progress", { ...ctx(), milestone: p });
+          }
+        }
+      });
+      audio.addEventListener("play", () => {
+        setPlayBtn(true);
+        umamiTrack("play", ctx());
+        // Local estimate: count one "play" as one full file served (rough upper-bound).
+        // Better estimates require server-side bytes; this is still useful for “danger zone” awareness.
+        const tr = album.tracks[idx];
+        if (tr.bytes) {
+          localUsage[tr.id] = (Number(localUsage[tr.id])||0) + Number(tr.bytes);
+          saveLocalUsage();
+        }
+      });
+      audio.addEventListener("pause", () => {
+        setPlayBtn(false);
+        umamiTrack("pause", ctx());
+      });
+      audio.addEventListener("ended", () => {
+        setPlayBtn(false);
+        umamiTrack("ended", ctx());
+        next(true);
+      });
+
+      // Load JSON
+      album = await (await fetch("./album.json", { cache: "no-store" })).json();
+      $("albumTitle").textContent = album.album_title || "EchoVerse Album";
+      $("albumSubtitle").textContent = album.drop_title || "Experience Drop";
+      $("albumDesc").textContent = album.description || "";
+
+      // Default track
+      idx = 0;
+      renderTracks();
+      renderNow();
+      loadAudioForCurrent(false);
+
+      umamiTrack("page_view_player", { album: album.album_title || "unknown" });
+
+      // Service worker (optional)
+      if ("serviceWorker" in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.register("./sw.js");
+          console.log("Service Worker registered:", registration.scope);
+        } catch (err) {
+          console.warn("Service Worker registration failed:", err);
+        }
+      }
+
+      renderLocalEstimate();
+    }
+
+    function ctx(){
+      const tr = album?.tracks?.[idx] || {};
+      return {
+        album: album?.album_title || "unknown",
+        drop: album?.drop_title || "unknown",
+        track_id: tr.id || String(idx+1),
+        track_title: tr.title || "unknown",
+        theme
+      };
+    }
+
+    function loadAudioForCurrent(autoplay){
+      const tr = album.tracks[idx];
+      audio.src = tr.audio;
+      audio.load();
+      if (autoplay) audio.play().catch(()=>{});
+      renderNow();
+    }
+
+    function loadTrack(i, autoplay){
+      idx = Math.max(0, Math.min(album.tracks.length-1, i));
+      loadAudioForCurrent(autoplay);
+      umamiTrack("track_select", ctx());
+    }
+
+    function togglePlay(){
+      if (!audio.src) return;
+      if (audio.paused) audio.play().catch(()=>{});
+      else audio.pause();
+    }
+
+    function next(autoplay){ loadTrack((idx+1) % album.tracks.length, autoplay); }
+    function prev(autoplay){ loadTrack((idx-1 + album.tracks.length) % album.tracks.length, autoplay); }
+
+    function openDrawer(id){
+      const d = $(id);
+      d.classList.add("open");
+      d.setAttribute("aria-hidden","false");
+      umamiTrack("drawer_open", { ...ctx(), drawer: id });
+    }
+    function closeDrawer(id){
+      const d = $(id);
+      d.classList.remove("open");
+      d.setAttribute("aria-hidden","true");
+      umamiTrack("drawer_close", { ...ctx(), drawer: id });
+    }
+
+    boot();
+  </script>
+</body>
+</html>
