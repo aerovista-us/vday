@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <link rel="stylesheet" href="./styles.css">
+  <title>EchoVerse • Celestine Prophecy Adventure</title>
+  <style>
+    /* Adventure-specific enhancements */
+    .adventure-header {
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    }
+    .adventure-title {
+      font-size: 24px;
+      font-weight: 950;
+      margin: 0 0 8px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .adventure-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Energy Canvas */
+    .energy-canvas-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.3);
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    #energyCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .energy-meter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,.2);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+    .energy-bar {
+      flex: 1;
+      height: 10px;
+      background: rgba(255,255,255,.1);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .energy-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width .3s ease;
+      box-shadow: 0 0 20px color-mix(in oklab, var(--accent) 30%, transparent);
+    }
+    .energy-value {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 800;
+      min-width: 50px;
+      text-align: right;
+      color: var(--accent);
+    }
+
+    /* Energy Controls */
+    .energy-controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .energy-btn {
+      padding: 16px 12px;
+      border-radius: 16px;
+      border: 2px solid var(--line);
+      background: rgba(0,0,0,.2);
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .energy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    .energy-btn.give {
+      border-color: var(--good);
+      color: var(--good);
+    }
+    .energy-btn.give:hover {
+      background: color-mix(in oklab, var(--good) 15%, transparent);
+      box-shadow: 0 0 30px color-mix(in oklab, var(--good) 25%, transparent);
+    }
+    .energy-btn.take {
+      border-color: var(--accent3);
+      color: var(--accent3);
+    }
+    .energy-btn.take:hover {
+      background: color-mix(in oklab, var(--accent3) 15%, transparent);
+      box-shadow: 0 0 30px color-mix(in oklab, var(--accent3) 25%, transparent);
+    }
+    .energy-btn.suck {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .energy-btn.suck:hover {
+      background: color-mix(in oklab, var(--accent) 15%, transparent);
+      box-shadow: 0 0 30px color-mix(in oklab, var(--accent) 25%, transparent);
+    }
+    .energy-btn.share {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+    .energy-btn.share:hover {
+      background: color-mix(in oklab, var(--accent2) 15%, transparent);
+      box-shadow: 0 0 30px color-mix(in oklab, var(--accent2) 25%, transparent);
+    }
+    .energy-icon {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    /* Energy Stats */
+    .energy-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .energy-stat {
+      text-align: center;
+      padding: 14px;
+      background: rgba(0,0,0,.2);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+    }
+    .energy-stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 6px;
+    }
+    .energy-stat-value {
+      font-size: 24px;
+      font-weight: 950;
+      font-family: var(--mono);
+    }
+
+    /* Insights Grid */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .insight-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      padding: 18px;
+      cursor: pointer;
+      transition: all .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .insight-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--line2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    .insight-card.completed {
+      border-color: var(--good);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--good) 10%, transparent), rgba(255,255,255,.02));
+    }
+    .insight-card.locked {
+      opacity: .4;
+      cursor: not-allowed;
+      filter: grayscale(.8);
+    }
+    .insight-number {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 10px;
+    }
+    .insight-title {
+      font-size: 16px;
+      font-weight: 900;
+      margin: 0 0 10px;
+      letter-spacing: .02em;
+    }
+    .insight-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .insight-progress {
+      height: 4px;
+      background: rgba(0,0,0,.3);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .insight-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .3s ease;
+    }
+    .insight-track-link {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    /* Puzzle Modal */
+    .puzzle-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      background: rgba(0,0,0,.75);
+      backdrop-filter: blur(10px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .puzzle-modal.active {
+      display: flex;
+    }
+    .puzzle-content {
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: var(--radius2);
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 80px rgba(0,0,0,.6);
+    }
+    .puzzle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .puzzle-title {
+      font-size: 18px;
+      font-weight: 950;
+    }
+    .puzzle-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.3);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+    }
+    .puzzle-close:hover {
+      background: rgba(0,0,0,.5);
+      border-color: var(--line2);
+    }
+    .puzzle-question {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .puzzle-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .puzzle-option {
+      padding: 16px;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,.2);
+      cursor: pointer;
+      transition: all .2s;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .puzzle-option:hover {
+      border-color: var(--line2);
+      background: rgba(0,0,0,.3);
+    }
+    .puzzle-option.correct {
+      border-color: var(--good);
+      background: color-mix(in oklab, var(--good) 15%, transparent);
+    }
+    .puzzle-option.wrong {
+      border-color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 15%, transparent);
+    }
+
+    /* Collaboration Panel */
+    .collab-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      padding: 18px;
+      margin: 16px 0;
+    }
+    .collab-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+    .collab-messages {
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-right: 8px;
+    }
+    .collab-message {
+      padding: 12px;
+      background: rgba(0,0,0,.2);
+      border-radius: 12px;
+      border-left: 3px solid var(--accent);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .collab-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.3);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .collab-input:focus {
+      outline: none;
+      border-color: var(--line2);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 20%, transparent);
+    }
+
+    /* Track Connection Badge */
+    .track-connection {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.2);
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .track-connection:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+    
+    /* Progress indicator */
+    .progress-indicator {
+      position: fixed;
+      top: 80px;
+      right: 16px;
+      z-index: 10;
+      padding: 12px 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+    .progress-indicator-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .progress-indicator-value {
+      font-size: 24px;
+      font-weight: 950;
+      font-family: var(--mono);
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+
+<body data-theme="anti">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="kicker">EchoVerse • Celestine Prophecy</div>
+        <div class="title">Energy Dynamics Adventure</div>
+      </div>
+      <div class="controls">
+        <button class="btn badge primary" id="themeBtn" title="Toggle theme">
+          <span class="dot"></span>
+          <span id="themeLabel">Anti-Love</span>
+        </button>
+        <a href="./index.html" class="btn">Back to Player</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-indicator">
+    <div class="progress-indicator-title">Progress</div>
+    <div class="progress-indicator-value" id="progressValue">0/9</div>
+  </div>
+
+  <div class="wrap">
+    <div class="adventure-header">
+      <h1 class="adventure-title">The 9 Insights Adventure</h1>
+      <p class="adventure-subtitle">Explore energy dynamics through interactive puzzles, visualization, and collaboration. Each Insight connects to tracks from the album—discover the connections as you progress.</p>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Energy Dynamics -->
+      <div class="card">
+        <div class="hd">
+          <div class="meta">
+            <div class="album">Energy Dynamics</div>
+            <div class="name">Visualize & Interact</div>
+            <div class="desc">Experiment with give, take, suck, and share. Watch how energy flows and connects.</div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding: 16px">
+          <div class="energy-meter">
+            <div class="energy-bar">
+              <div class="energy-fill" id="energyFill" style="width: 50%"></div>
+            </div>
+            <span class="energy-value" id="energyValue">50%</span>
+          </div>
+
+          <div class="energy-canvas-container">
+            <canvas id="energyCanvas"></canvas>
+          </div>
+
+          <div class="energy-controls">
+            <button class="energy-btn give" data-action="give">
+              <span class="energy-icon">💙</span>
+              <span>Give</span>
+            </button>
+            <button class="energy-btn take" data-action="take">
+              <span class="energy-icon">💛</span>
+              <span>Take</span>
+            </button>
+            <button class="energy-btn suck" data-action="suck">
+              <span class="energy-icon">🖤</span>
+              <span>Suck</span>
+            </button>
+            <button class="energy-btn share" data-action="share">
+              <span class="energy-icon">💜</span>
+              <span>Share</span>
+            </button>
+          </div>
+
+          <div class="energy-stats">
+            <div class="energy-stat">
+              <div class="energy-stat-label">Given</div>
+              <div class="energy-stat-value" id="statGive" style="color: var(--good)">0</div>
+            </div>
+            <div class="energy-stat">
+              <div class="energy-stat-label">Taken</div>
+              <div class="energy-stat-value" id="statTake" style="color: var(--accent3)">0</div>
+            </div>
+            <div class="energy-stat">
+              <div class="energy-stat-label">Sucked</div>
+              <div class="energy-stat-value" id="statSuck" style="color: var(--accent)">0</div>
+            </div>
+            <div class="energy-stat">
+              <div class="energy-stat-label">Shared</div>
+              <div class="energy-stat-value" id="statShare" style="color: var(--accent2)">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Collaboration -->
+      <div class="card">
+        <div class="hd">
+          <div class="meta">
+            <div class="album">Collaboration Space</div>
+            <div class="name">Share Insights</div>
+            <div class="desc">Document your journey, share discoveries, and build community energy together.</div>
+          </div>
+        </div>
+
+        <div class="collab-panel">
+          <h3 class="collab-title">💕 Community Messages</h3>
+          <div class="collab-messages" id="collabMessages">
+            <div class="collab-message">Welcome! Share your thoughts about energy dynamics and love...</div>
+          </div>
+          <input type="text" class="collab-input" id="collabInput" placeholder="Share your insight or message of love...">
+        </div>
+      </div>
+    </div>
+
+    <!-- Insights Grid -->
+    <div class="card" style="margin-top: 14px">
+      <div class="hd">
+        <div class="meta">
+          <div class="album">The 9 Insights</div>
+          <div class="name">Complete the Journey</div>
+          <div class="desc">Solve puzzles to unlock each Insight. Connect them to tracks from the album.</div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 16px">
+        <div class="insights-grid" id="insightsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Puzzle Modal -->
+  <div class="puzzle-modal" id="puzzleModal">
+    <div class="puzzle-content">
+      <div class="puzzle-header">
+        <h3 class="puzzle-title" id="puzzleTitle">Insight Puzzle</h3>
+        <button class="puzzle-close" id="puzzleClose">×</button>
+      </div>
+      <div class="puzzle-body">
+        <div class="puzzle-question" id="puzzleQuestion"></div>
+        <div class="puzzle-options" id="puzzleOptions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerbar">
+    <div class="inner">
+      <div class="small">EchoVerse Adventure • Energy Dynamics • Celestine Prophecy</div>
+      <div class="kbd mono">Click Insight cards to solve puzzles • Experiment with energy actions</div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // ====== CELESTINE PROPHECY INSIGHTS ======
+    const INSIGHTS = [
+      {
+        id: 1,
+        number: "First Insight",
+        title: "A Critical Mass",
+        description: "A new spiritual awakening is occurring in human culture, an awakening brought about by a critical mass of individuals who have their lives focused on the spiritual.",
+        trackId: null,
+        puzzle: {
+          question: "What does the First Insight reveal about human consciousness?",
+          options: [
+            "We are entering a new spiritual awakening",
+            "Technology will solve all problems",
+            "Material wealth is the only goal",
+            "Spirituality is declining"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 2,
+        number: "Second Insight",
+        title: "The Longer Now",
+        description: "This awakening represents the creation of a new, more complete worldview, which replaces a five-hundred-year-old preoccupation with secular survival and comfort.",
+        trackId: null,
+        puzzle: {
+          question: "The Second Insight suggests we're moving beyond what?",
+          options: [
+            "Secular survival and comfort",
+            "All technology",
+            "Human relationships",
+            "Natural resources"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 3,
+        number: "Third Insight",
+        title: "A Matter of Energy",
+        description: "We now experience that we live not in a material universe, but in a universe of dynamic energy. Everything extant is a field of sacred energy that we can sense and intuit.",
+        trackId: "t01_energy_game",
+        puzzle: {
+          question: "According to the Third Insight, what is everything made of?",
+          options: [
+            "Dynamic energy fields",
+            "Solid matter only",
+            "Random particles",
+            "Empty space"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 4,
+        number: "Fourth Insight",
+        title: "The Struggle for Power",
+        description: "Too often humans cut themselves off from the greater source of this energy and so feel weak and insecure. To gain energy, we tend to manipulate or force others to give us attention and thus energy.",
+        trackId: "t01_energy_game",
+        puzzle: {
+          question: "What happens when we cut ourselves off from energy?",
+          options: [
+            "We manipulate others for attention",
+            "We become more powerful",
+            "We find inner peace",
+            "We connect better with nature"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 5,
+        number: "Fifth Insight",
+        title: "The Message of the Mystics",
+        description: "Insecurity and violence ends when we experience an inner connection with divine energy within, a connection described by mystics of all traditions.",
+        trackId: "t04_green_battery",
+        puzzle: {
+          question: "How do we end insecurity and violence?",
+          options: [
+            "By connecting with divine energy within",
+            "By controlling others",
+            "By accumulating wealth",
+            "By isolating ourselves"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 6,
+        number: "Sixth Insight",
+        title: "Clearing the Past",
+        description: "Insecurity and violence ends when we experience an inner connection with divine energy within, a connection described by mystics of all traditions.",
+        trackId: "t03_receipts_ropes",
+        puzzle: {
+          question: "What must we clear to move forward?",
+          options: [
+            "Past patterns and control dramas",
+            "All relationships",
+            "Material possessions",
+            "Future plans"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 7,
+        number: "Seventh Insight",
+        title: "Engaging the Flow",
+        description: "Knowing our personal mission further enhances the flow of mysterious coincidences, and there are specific ways to engage this flow.",
+        trackId: "t05_focus_fire",
+        puzzle: {
+          question: "What enhances the flow of coincidences?",
+          options: [
+            "Knowing our personal mission",
+            "Following others blindly",
+            "Avoiding all risks",
+            "Staying in one place"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 8,
+        number: "Eighth Insight",
+        title: "The Interpersonal Ethic",
+        description: "We can increase the frequency of guiding coincidences by uplifting every person that comes into our lives.",
+        trackId: "t07_co_creator",
+        puzzle: {
+          question: "How do we increase meaningful coincidences?",
+          options: [
+            "By uplifting every person we meet",
+            "By focusing only on ourselves",
+            "By competing with others",
+            "By avoiding social contact"
+          ],
+          correct: 0
+        }
+      },
+      {
+        id: 9,
+        number: "Ninth Insight",
+        title: "The Emerging Culture",
+        description: "As we all evolve toward the best completion of our spiritual missions, the technological means of survival will be fully automated as humans focus instead on synchronistic growth.",
+        trackId: "t07_co_creator",
+        puzzle: {
+          question: "What will humans focus on in the emerging culture?",
+          options: [
+            "Synchronistic growth and spiritual missions",
+            "Only material wealth",
+            "Isolation and competition",
+            "Eliminating all technology"
+          ],
+          correct: 0
+        }
+      }
+    ];
+
+    // ====== ENERGY DYNAMICS SYSTEM ======
+    let energyState = {
+      level: 50,
+      give: 0,
+      take: 0,
+      suck: 0,
+      share: 0,
+      particles: []
+    };
+
+    let energyAnimationId = null;
+    const canvas = $("energyCanvas");
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class EnergyParticle {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.type = type;
+        this.life = 1.0;
+        this.size = Math.random() * 4 + 2;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.02;
+        
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.beginPath();
+        
+        let color;
+        switch(this.type) {
+          case 'give': color = getComputedStyle(document.documentElement).getPropertyValue('--good').trim(); break;
+          case 'take': color = getComputedStyle(document.documentElement).getPropertyValue('--accent3').trim(); break;
+          case 'suck': color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(); break;
+          case 'share': color = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim(); break;
+        }
+        
+        ctx.fillStyle = color;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function animateEnergy() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw connections
+      for (let i = 0; i < energyState.particles.length; i++) {
+        for (let j = i + 1; j < energyState.particles.length; j++) {
+          const p1 = energyState.particles[i];
+          const p2 = energyState.particles[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 120) {
+            ctx.save();
+            ctx.globalAlpha = (1 - dist / 120) * 0.4;
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent2').trim();
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+      
+      // Update and draw particles
+      energyState.particles = energyState.particles.filter(p => {
+        p.update();
+        p.draw();
+        return p.life > 0;
+      });
+      
+      energyAnimationId = requestAnimationFrame(animateEnergy);
+    }
+
+    function addEnergyParticles(type, count = 5) {
+      for (let i = 0; i < count; i++) {
+        energyState.particles.push(new EnergyParticle(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height,
+          type
+        ));
+      }
+    }
+
+    function updateEnergy(action) {
+      switch(action) {
+        case 'give':
+          energyState.give++;
+          energyState.level = Math.min(100, energyState.level + 2);
+          addEnergyParticles('give', 8);
+          break;
+        case 'take':
+          energyState.take++;
+          energyState.level = Math.max(0, energyState.level - 1);
+          addEnergyParticles('take', 5);
+          break;
+        case 'suck':
+          energyState.suck++;
+          energyState.level = Math.max(0, energyState.level - 3);
+          addEnergyParticles('suck', 3);
+          break;
+        case 'share':
+          energyState.share++;
+          energyState.level = Math.min(100, energyState.level + 3);
+          addEnergyParticles('share', 10);
+          break;
+      }
+      
+      updateEnergyUI();
+      saveEnergyState();
+    }
+
+    function updateEnergyUI() {
+      $("energyFill").style.width = energyState.level + '%';
+      $("energyValue").textContent = Math.round(energyState.level) + '%';
+      $("statGive").textContent = energyState.give;
+      $("statTake").textContent = energyState.take;
+      $("statSuck").textContent = energyState.suck;
+      $("statShare").textContent = energyState.share;
+    }
+
+    function saveEnergyState() {
+      localStorage.setItem('celestine_energy', JSON.stringify(energyState));
+    }
+
+    function loadEnergyState() {
+      const saved = localStorage.getItem('celestine_energy');
+      if (saved) {
+        energyState = {...energyState, ...JSON.parse(saved)};
+        updateEnergyUI();
+      }
+    }
+
+    // ====== ADVENTURE SYSTEM ======
+    let album = null;
+    let completedInsights = JSON.parse(localStorage.getItem('celestine_insights') || '[]');
+
+    function getTrackTitle(trackId) {
+      if (!album || !trackId) return null;
+      const track = album.tracks.find(t => t.id === trackId);
+      return track ? track.title : null;
+    }
+
+    function updateProgress() {
+      const completed = completedInsights.length;
+      const total = INSIGHTS.length;
+      $("progressValue").textContent = `${completed}/${total}`;
+    }
+
+    function renderInsights() {
+      const grid = $("insightsGrid");
+      grid.innerHTML = '';
+      
+      INSIGHTS.forEach((insight, idx) => {
+        const isLocked = idx > 0 && !completedInsights.includes(INSIGHTS[idx - 1].id);
+        const isCompleted = completedInsights.includes(insight.id);
+        const trackTitle = getTrackTitle(insight.trackId);
+        
+        const card = document.createElement("div");
+        card.className = `insight-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+        const trackLink = trackTitle ? `<a href="./index.html" class="track-connection" onclick="localStorage.setItem('ev_track', '${insight.trackId}'); return true;">🎵 ${trackTitle}</a>` : '';
+        card.innerHTML = `
+          <div class="insight-number">${insight.number}</div>
+          <div class="insight-title">${insight.title}</div>
+          <div class="insight-desc">${insight.description}</div>
+          ${trackLink}
+          <div class="insight-progress">
+            <div class="insight-progress-fill" style="width:${isCompleted ? '100' : '0'}%"></div>
+          </div>
+        `;
+        
+        if (!isLocked) {
+          card.addEventListener('click', () => openPuzzle(insight));
+        }
+        
+        grid.appendChild(card);
+      });
+      
+      updateProgress();
+    }
+
+    function openPuzzle(insight) {
+      const modal = $("puzzleModal");
+      const question = $("puzzleQuestion");
+      const options = $("puzzleOptions");
+      
+      $("puzzleTitle").textContent = `${insight.number}: ${insight.title}`;
+      question.textContent = insight.puzzle.question;
+      
+      options.innerHTML = '';
+      insight.puzzle.options.forEach((opt, idx) => {
+        const btn = document.createElement("div");
+        btn.className = "puzzle-option";
+        btn.textContent = opt;
+        btn.addEventListener('click', () => {
+          if (idx === insight.puzzle.correct) {
+            btn.classList.add('correct');
+            setTimeout(() => {
+              completeInsight(insight.id);
+              closePuzzle();
+            }, 1500);
+          } else {
+            btn.classList.add('wrong');
+            setTimeout(() => {
+              btn.classList.remove('wrong');
+            }, 1000);
+          }
+        });
+        options.appendChild(btn);
+      });
+      
+      modal.classList.add('active');
+    }
+
+    function closePuzzle() {
+      $("puzzleModal").classList.remove('active');
+    }
+
+    function completeInsight(insightId) {
+      if (!completedInsights.includes(insightId)) {
+        completedInsights.push(insightId);
+        localStorage.setItem('celestine_insights', JSON.stringify(completedInsights));
+        renderInsights();
+        updateEnergy('share'); // Reward for completing
+      }
+    }
+
+    // ====== COLLABORATION ======
+    let collabMessages = JSON.parse(localStorage.getItem('celestine_collab') || '[]');
+
+    function renderCollabMessages() {
+      const container = $("collabMessages");
+      container.innerHTML = '';
+      
+      if (collabMessages.length === 0) {
+        container.innerHTML = '<div class="collab-message">Welcome! Share your thoughts about energy dynamics and love...</div>';
+      } else {
+        collabMessages.slice(-20).forEach(msg => {
+          const div = document.createElement("div");
+          div.className = "collab-message";
+          div.textContent = msg;
+          container.appendChild(div);
+        });
+      }
+    }
+
+    function addCollabMessage(text) {
+      if (!text.trim()) return;
+      collabMessages.push(text);
+      if (collabMessages.length > 50) collabMessages.shift();
+      localStorage.setItem('celestine_collab', JSON.stringify(collabMessages));
+      renderCollabMessages();
+      updateEnergy('share');
+    }
+
+    // ====== THEME SYSTEM ======
+    let theme = localStorage.getItem("ev_theme") || "anti";
+
+    function setTheme(t){
+      theme = t;
+      document.body.setAttribute("data-theme", theme);
+      localStorage.setItem("ev_theme", theme);
+      $("themeLabel").textContent = theme === "love" ? "Love" : "Anti-Love";
+    }
+
+    // ====== INIT ======
+    async function boot() {
+      setTheme(theme);
+      
+      // Load album data
+      try {
+        album = await (await fetch("./album.json", { cache: "no-store" })).json();
+      } catch (e) {
+        console.warn("Could not load album.json:", e);
+      }
+
+      // Energy system
+      loadEnergyState();
+      animateEnergy();
+      
+      // Event listeners
+      document.querySelectorAll('.energy-btn').forEach(btn => {
+        btn.addEventListener('click', () => updateEnergy(btn.dataset.action));
+      });
+
+      $("collabInput").addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addCollabMessage(e.target.value);
+          e.target.value = '';
+        }
+      });
+
+      $("puzzleClose").addEventListener('click', closePuzzle);
+      $("puzzleModal").addEventListener('click', (e) => {
+        if (e.target.id === 'puzzleModal') closePuzzle();
+      });
+
+      $("themeBtn").addEventListener('click', () => setTheme(theme === "anti" ? "love" : "anti"));
+
+      // Render
+      renderInsights();
+      renderCollabMessages();
+    }
+
+    boot();
+  </script>
+</body>
+</html>

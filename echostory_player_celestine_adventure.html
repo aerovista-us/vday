@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="en" data-theme="love" data-mode="player">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Celestine Prophecy Adventure — Energy Dynamics Player</title>
+<meta name="description" content="Interactive adventure music player exploring energy dynamics from The Celestine Prophecy. Learn, play, collaborate, and discover love through energy exchange."/>
+<style>
+/* =========================================================
+   Celestine Prophecy Adventure Player
+   - Energy dynamics visualization & interaction
+   - Adventure mode with 9 Insights as puzzles
+   - Collaboration & love mechanics
+   - Valentine theme with energy flows
+   ========================================================= */
+
+:root {
+  --r:18px;
+  --shadow:0 18px 60px rgba(0,0,0,.48);
+  --sans:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+
+  --bg:#090513;
+  --bg2:#12061f;
+  --panel:rgba(255,255,255,.07);
+  --panel2:rgba(255,255,255,.10);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.62);
+  --muted2:rgba(255,255,255,.46);
+  --line:rgba(255,255,255,.12);
+  --accent:#ff2d88;
+  --accent2:#8b5cf6;
+  --good:#4cc9f0;
+  --glow:rgba(255,45,136,.22);
+  --glow2:rgba(139,92,246,.16);
+  --glow3:rgba(255,183,3,.10);
+  --cardTop:rgba(255,255,255,.08);
+  --cardBot:rgba(255,255,255,.04);
+  --energy-give:#4cc9f0;
+  --energy-take:#ffb703;
+  --energy-suck:#ff006e;
+  --energy-share:#8b5cf6;
+  --bgPatternOpacity:.24;
+  --badgeBg:rgba(0,0,0,.20);
+  --btnBg:rgba(0,0,0,.20);
+  --btnBgHover:rgba(0,0,0,.32);
+  --focus:rgba(255,255,255,.25);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:var(--sans);
+  color:var(--text);
+  min-height:100vh;
+  background:
+    radial-gradient(1100px 700px at 18% 10%, var(--glow), transparent 60%),
+    radial-gradient(900px 600px at 85% 18%, var(--glow2), transparent 55%),
+    radial-gradient(900px 700px at 55% 85%, var(--glow3), transparent 60%),
+    linear-gradient(180deg, var(--bg), var(--bg2));
+  overflow-x:hidden;
+}
+
+.wrap{max-width:1400px;margin:0 auto;padding:22px 16px 56px; position:relative;}
+
+/* Mode Toggle */
+.mode-toggle{
+  position:fixed; top:16px; right:16px; z-index:100;
+  display:flex; gap:8px; padding:8px; background:rgba(0,0,0,.4);
+  border-radius:12px; border:1px solid var(--line);
+  backdrop-filter:blur(10px);
+}
+.mode-btn{
+  padding:8px 14px; border-radius:8px; border:none;
+  background:var(--btnBg); color:var(--text);
+  cursor:pointer; font-size:12px; font-weight:600;
+  transition:all .2s;
+}
+.mode-btn.active{
+  background:var(--accent); color:white;
+  box-shadow:0 0 20px rgba(255,45,136,.4);
+}
+.mode-btn:hover:not(.active){
+  background:var(--btnBgHover);
+}
+
+/* Top Header */
+.top{
+  position:relative; z-index:5;
+  display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+  padding:14px; border:1px solid var(--line); border-radius:var(--r);
+  background:linear-gradient(180deg, var(--cardTop), var(--cardBot));
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(10px);
+  margin-bottom:14px;
+}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.mark{
+  width:42px;height:42px;border-radius:14px;
+  background:linear-gradient(135deg, var(--accent), var(--good));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  position:relative;
+  overflow:hidden;
+}
+.mark:before {
+  content:"";
+  position:absolute; inset:-20%;
+  background:radial-gradient(circle at 30% 40%, rgba(255,255,255,.35), transparent 45%);
+  animation: shimmer 3.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%{transform:translateX(-6px) translateY(0)}
+  50%{transform:translateX(6px) translateY(-2px)}
+  100%{transform:translateX(-6px) translateY(0)}
+}
+h1{margin:0;font-size:14px;letter-spacing:1.1px}
+.sub{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{
+  cursor:pointer; user-select:none; font-size:12px; padding:9px 10px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:var(--btnBg);
+  color:rgba(255,255,255,.88);
+  transition:transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.btn:hover{transform:translateY(-1px);background:var(--btnBgHover);border-color:rgba(255,255,255,.20)}
+.pill{font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:var(--badgeBg);color:rgba(255,255,255,.78)}
+
+/* Energy Dynamics Panel */
+.energy-panel{
+  display:none; position:relative; z-index:5;
+  border:1px solid var(--line); border-radius:var(--r);
+  background:linear-gradient(180deg, var(--cardTop), var(--cardBot));
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(10px);
+  padding:20px; margin-bottom:14px;
+}
+body[data-mode="adventure"] .energy-panel{display:block}
+.energy-header{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:16px;
+}
+.energy-title{font-size:16px; font-weight:800; letter-spacing:.8px; margin:0}
+.energy-meter{
+  display:flex; gap:12px; align-items:center;
+}
+.energy-bar{
+  width:200px; height:8px; background:rgba(0,0,0,.3);
+  border-radius:4px; overflow:hidden; position:relative;
+}
+.energy-fill{
+  height:100%; background:linear-gradient(90deg, var(--energy-share), var(--energy-give));
+  border-radius:4px; transition:width .3s;
+  box-shadow:0 0 10px rgba(139,92,246,.5);
+}
+.energy-value{
+  font-family:var(--mono); font-size:12px; color:var(--good);
+  min-width:60px; text-align:right;
+}
+
+.energy-canvas-wrap{
+  position:relative; width:100%; height:200px;
+  background:rgba(0,0,0,.2); border-radius:12px;
+  border:1px solid var(--line); overflow:hidden;
+  margin-bottom:16px;
+}
+#energyCanvas{
+  display:block; width:100%; height:100%;
+}
+
+.energy-controls{
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;
+}
+.energy-btn{
+  padding:14px; border-radius:12px; border:2px solid;
+  background:rgba(0,0,0,.3); cursor:pointer;
+  transition:all .2s; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-size:11px; font-weight:600;
+}
+.energy-btn.give{
+  border-color:var(--energy-give);
+  color:var(--energy-give);
+}
+.energy-btn.give:hover{
+  background:rgba(76,201,240,.15);
+  box-shadow:0 0 20px rgba(76,201,240,.3);
+  transform:translateY(-2px);
+}
+.energy-btn.take{
+  border-color:var(--energy-take);
+  color:var(--energy-take);
+}
+.energy-btn.take:hover{
+  background:rgba(255,183,3,.15);
+  box-shadow:0 0 20px rgba(255,183,3,.3);
+  transform:translateY(-2px);
+}
+.energy-btn.suck{
+  border-color:var(--energy-suck);
+  color:var(--energy-suck);
+}
+.energy-btn.suck:hover{
+  background:rgba(255,0,110,.15);
+  box-shadow:0 0 20px rgba(255,0,110,.3);
+  transform:translateY(-2px);
+}
+.energy-btn.share{
+  border-color:var(--energy-share);
+  color:var(--energy-share);
+}
+.energy-btn.share:hover{
+  background:rgba(139,92,246,.15);
+  box-shadow:0 0 20px rgba(139,92,246,.3);
+  transform:translateY(-2px);
+}
+.energy-icon{font-size:24px; line-height:1}
+
+.energy-stats{
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;
+  margin-top:12px;
+}
+.energy-stat{
+  text-align:center; padding:10px;
+  background:rgba(0,0,0,.2); border-radius:8px;
+  border:1px solid var(--line);
+}
+.energy-stat-label{
+  font-size:10px; color:var(--muted); text-transform:uppercase;
+  letter-spacing:1px; margin-bottom:4px;
+}
+.energy-stat-value{
+  font-size:18px; font-weight:800; font-family:var(--mono);
+}
+
+/* Adventure Mode */
+.adventure-panel{
+  display:none;
+}
+body[data-mode="adventure"] .adventure-panel{display:block}
+
+.insights-grid{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:14px; margin-bottom:14px;
+}
+.insight-card{
+  border:1px solid var(--line); border-radius:var(--r);
+  background:linear-gradient(180deg, var(--cardTop), var(--cardBot));
+  padding:16px; cursor:pointer;
+  transition:all .2s; position:relative;
+  overflow:hidden;
+}
+.insight-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--accent);
+  box-shadow:0 8px 24px rgba(255,45,136,.2);
+}
+.insight-card.completed{
+  border-color:var(--good);
+  background:linear-gradient(180deg, rgba(76,201,240,.1), rgba(76,201,240,.05));
+}
+.insight-card.locked{
+  opacity:.5; cursor:not-allowed;
+}
+.insight-number{
+  font-family:var(--mono); font-size:11px; color:var(--muted);
+  margin-bottom:8px;
+}
+.insight-title{
+  font-size:14px; font-weight:800; margin:0 0 8px;
+  letter-spacing:.6px;
+}
+.insight-desc{
+  font-size:12px; color:var(--muted); line-height:1.5;
+  margin-bottom:12px;
+}
+.insight-progress{
+  height:4px; background:rgba(0,0,0,.3);
+  border-radius:2px; overflow:hidden; margin-top:8px;
+}
+.insight-progress-fill{
+  height:100%; background:var(--accent);
+  transition:width .3s;
+}
+
+.puzzle-modal{
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center;
+  padding:20px;
+}
+.puzzle-modal.active{display:flex}
+.puzzle-content{
+  background:var(--bg2); border:1px solid var(--line);
+  border-radius:var(--r); padding:24px; max-width:600px;
+  width:100%; max-height:90vh; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+}
+.puzzle-header{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:20px;
+}
+.puzzle-close{
+  width:32px; height:32px; border-radius:8px;
+  border:1px solid var(--line); background:var(--btnBg);
+  color:var(--text); cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+}
+.puzzle-body{
+  margin-bottom:20px;
+}
+.puzzle-question{
+  font-size:16px; line-height:1.6; margin-bottom:16px;
+  color:var(--text);
+}
+.puzzle-options{
+  display:flex; flex-direction:column; gap:10px;
+}
+.puzzle-option{
+  padding:14px; border:2px solid var(--line);
+  border-radius:12px; background:var(--btnBg);
+  cursor:pointer; transition:all .2s;
+}
+.puzzle-option:hover{
+  border-color:var(--accent);
+  background:var(--btnBgHover);
+}
+.puzzle-option.correct{
+  border-color:var(--good);
+  background:rgba(76,201,240,.15);
+}
+.puzzle-option.wrong{
+  border-color:var(--energy-suck);
+  background:rgba(255,0,110,.15);
+}
+
+.collaboration-panel{
+  border:1px solid var(--line); border-radius:var(--r);
+  background:linear-gradient(180deg, var(--cardTop), var(--cardBot));
+  padding:20px; margin-bottom:14px;
+}
+.collab-title{
+  font-size:16px; font-weight:800; margin:0 0 16px;
+  letter-spacing:.8px;
+}
+.collab-input{
+  width:100%; padding:12px; border-radius:12px;
+  border:1px solid var(--line); background:rgba(0,0,0,.3);
+  color:var(--text); font-size:14px; margin-bottom:12px;
+}
+.collab-messages{
+  max-height:200px; overflow-y:auto;
+  display:flex; flex-direction:column; gap:8px;
+  margin-bottom:12px;
+}
+.collab-message{
+  padding:10px; background:rgba(0,0,0,.2);
+  border-radius:8px; border-left:3px solid var(--accent);
+  font-size:12px; line-height:1.5;
+}
+
+/* Player Grid */
+.grid{position:relative; z-index:5; display:grid;grid-template-columns: 1fr 1fr;gap:12px;margin-top:14px}
+@media (max-width: 900px){.grid{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));box-shadow:var(--shadow);overflow:hidden}
+.player{display:grid;grid-template-columns: 1fr 1fr;gap:0}
+@media (max-width: 900px){.player{grid-template-columns:1fr}}
+.left{padding:14px;border-right:1px solid var(--line)}
+@media (max-width: 900px){.left{border-right:0;border-bottom:1px solid var(--line)}}
+.right{padding:14px}
+
+.coverwrap{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22); position:relative}
+.coverwrap img,.coverwrap svg{display:block;width:100%;height:auto}
+
+.now{margin-top:12px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.np{min-width:0}
+.np .t{font-weight:800;letter-spacing:.6px;margin:0 0 6px;font-size:14px}
+.np .m{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
+.controls{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.big{
+  border-radius:14px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(0,0,0,.26);
+  color:rgba(255,255,255,.92);
+  padding:12px 12px;cursor:pointer;min-width:44px;text-align:center
+}
+.big:hover{background:rgba(0,0,0,.40)}
+.big.accent {
+  border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,.14));
+}
+.seekrow{margin-top:10px;display:flex;gap:10px;align-items:center}
+input[type="range"]{width:100%}
+.time{font-family:var(--mono);font-size:11px;color:var(--muted2);min-width:98px;text-align:right}
+.minirow{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.minirow label{font-size:12px;color:var(--muted)}
+select{
+  background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.14);
+  color:rgba(255,255,255,.86); border-radius:12px; padding:8px 10px;
+}
+.listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.listhead h2{margin:0;font-size:14px;letter-spacing:.8px}
+.search{width:220px;max-width:60vw;padding:9px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:rgba(255,255,255,.86);outline:none}
+
+.tracklist{display:flex;flex-direction:column;gap:8px}
+.trk{
+  display:flex;gap:10px;align-items:center;justify-content:space-between;
+  padding:10px 10px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);
+  border-radius:14px;cursor:pointer;transition:transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.trk:hover{transform:translateY(-1px);background:rgba(0,0,0,.30);border-color:rgba(255,255,255,.18)}
+.trk.active{border-color: color-mix(in oklab, var(--accent) 60%, rgba(255,255,255,.16)); background: color-mix(in oklab, var(--accent) 10%, rgba(0,0,0,.20));}
+.lefttrk{display:flex;gap:10px;align-items:center;min-width:0}
+.num{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.14);padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.18)}
+.ttl{min-width:0}
+.ttl .a{margin:0;font-weight:800;font-size:12px;letter-spacing:.6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ttl .b{margin:3px 0 0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.rt .tag{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.62);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.lyrics{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+details{border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);border-radius:14px;padding:10px}
+summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+summary::-webkit-details-marker{display:none}
+pre{margin:10px 0 0;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);color:rgba(255,255,255,.86);font-family:var(--mono);font-size:12px;white-space:pre-wrap;line-height:1.55;overflow:auto}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark:before {animation:none !important}
+}
+</style>
+</head>
+<body>
+
+<div class="mode-toggle">
+  <button class="mode-btn active" data-mode="player">🎵 Player</button>
+  <button class="mode-btn" data-mode="adventure">✨ Adventure</button>
+</div>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div style="min-width:0">
+        <h1 id="albumTitle">Celestine Prophecy Adventure</h1>
+        <div class="sub" id="albumSub">Energy Dynamics • Love & Collaboration</div>
+      </div>
+    </div>
+    <div class="btnrow">
+      <span class="pill" id="jsonStatus">Data: embedded</span>
+      <button class="btn" id="btnReload" title="Reload JSON">Reload JSON</button>
+      <button class="btn" id="btnShuffle" title="Shuffle (S)">Shuffle</button>
+      <button class="btn" id="btnLoop" title="Loop (L)">Loop: Off</button>
+    </div>
+  </div>
+
+  <!-- Energy Dynamics Panel (Adventure Mode) -->
+  <div class="energy-panel">
+    <div class="energy-header">
+      <h2 class="energy-title">Energy Dynamics</h2>
+      <div class="energy-meter">
+        <div class="energy-bar">
+          <div class="energy-fill" id="energyFill" style="width:50%"></div>
+        </div>
+        <span class="energy-value" id="energyValue">50%</span>
+      </div>
+    </div>
+    <div class="energy-canvas-wrap">
+      <canvas id="energyCanvas"></canvas>
+    </div>
+    <div class="energy-controls">
+      <button class="energy-btn give" data-action="give">
+        <span class="energy-icon">💙</span>
+        <span>Give</span>
+      </button>
+      <button class="energy-btn take" data-action="take">
+        <span class="energy-icon">💛</span>
+        <span>Take</span>
+      </button>
+      <button class="energy-btn suck" data-action="suck">
+        <span class="energy-icon">🖤</span>
+        <span>Suck</span>
+      </button>
+      <button class="energy-btn share" data-action="share">
+        <span class="energy-icon">💜</span>
+        <span>Share</span>
+      </button>
+    </div>
+    <div class="energy-stats">
+      <div class="energy-stat">
+        <div class="energy-stat-label">Given</div>
+        <div class="energy-stat-value" id="statGive">0</div>
+      </div>
+      <div class="energy-stat">
+        <div class="energy-stat-label">Taken</div>
+        <div class="energy-stat-value" id="statTake">0</div>
+      </div>
+      <div class="energy-stat">
+        <div class="energy-stat-label">Sucked</div>
+        <div class="energy-stat-value" id="statSuck">0</div>
+      </div>
+      <div class="energy-stat">
+        <div class="energy-stat-label">Shared</div>
+        <div class="energy-stat-value" id="statShare">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Adventure Panel -->
+  <div class="adventure-panel">
+    <div class="collaboration-panel">
+      <h3 class="collab-title">💕 Collaboration Space</h3>
+      <div class="collab-messages" id="collabMessages">
+        <div class="collab-message">Welcome! Share your thoughts about energy dynamics and love...</div>
+      </div>
+      <input type="text" class="collab-input" id="collabInput" placeholder="Share your insight or message of love...">
+    </div>
+
+    <div class="insights-grid" id="insightsGrid"></div>
+  </div>
+
+  <!-- Player Grid -->
+  <div class="grid">
+    <div class="card">
+      <div class="player">
+        <div class="left">
+          <div class="coverwrap">
+            <img alt="Cover" id="coverImg" style="display:none"/>
+            <div id="coverSvg" style="display:none"></div>
+          </div>
+
+          <div class="now">
+            <div class="np">
+              <p class="t" id="nowTitle">—</p>
+              <p class="m" id="nowMeta">—</p>
+            </div>
+            <span class="pill" id="nowNum">#00</span>
+          </div>
+
+          <div class="controls">
+            <button class="big" id="prevBtn" title="Previous (←)">⟵</button>
+            <button class="big accent" id="playBtn" title="Play/Pause (Space)">▶</button>
+            <button class="big" id="nextBtn" title="Next (→)">⟶</button>
+            <button class="big" id="muteBtn" title="Mute (M)">🔈</button>
+            <span class="pill" id="statePill">Ready</span>
+          </div>
+
+          <div class="seekrow">
+            <input id="seek" type="range" min="0" max="1000" value="0" step="1"/>
+            <div class="time" id="timeOut">00:00 / 00:00</div>
+          </div>
+
+          <div class="minirow">
+            <label>Vol</label>
+            <input id="vol" type="range" min="0" max="1" value="0.9" step="0.01" style="width:140px"/>
+            <label>Speed</label>
+            <select id="speed">
+              <option value="0.85">0.85×</option>
+              <option value="0.95">0.95×</option>
+              <option value="1" selected>1.00×</option>
+              <option value="1.05">1.05×</option>
+              <option value="1.10">1.10×</option>
+              <option value="1.20">1.20×</option>
+            </select>
+          </div>
+
+          <div class="lyrics">
+            <details id="lyricsBox" open>
+              <summary>
+                <span style="font-weight:800;letter-spacing:.7px">Lyrics</span>
+                <span style="font-family:var(--mono);font-size:11px;color:var(--muted2)">toggle</span>
+              </summary>
+              <pre id="lyricsText">Select a track…</pre>
+            </details>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="listhead">
+            <h2>Tracklist</h2>
+            <input class="search" id="search" placeholder="Search title/vibe…" />
+          </div>
+          <div class="tracklist" id="trackList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Puzzle Modal -->
+<div class="puzzle-modal" id="puzzleModal">
+  <div class="puzzle-content">
+    <div class="puzzle-header">
+      <h3 id="puzzleTitle">Insight Puzzle</h3>
+      <button class="puzzle-close" id="puzzleClose">×</button>
+    </div>
+    <div class="puzzle-body">
+      <div class="puzzle-question" id="puzzleQuestion"></div>
+      <div class="puzzle-options" id="puzzleOptions"></div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio" preload="metadata" crossorigin="anonymous"></audio>
+<script id="ECHOSTORY_DATA" type="application/json">{
+  "album_title": "CELESTINE PROPHECY ADVENTURE",
+  "artist": "EchoVerse",
+  "tagline": "Discover the 9 Insights through music, energy, and love",
+  "tracks": [
+    {
+      "n": 1,
+      "title": "Track One",
+      "vibe": "vibe goes here",
+      "catch": "hook/catchphrase",
+      "audio": "audio/01.mp3",
+      "cover": "covers/01.svg",
+      "lyrics_id": "lyrics-01"
+    }
+  ]
+}</script>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+
+// ====== CELESTINE PROPHECY INSIGHTS ======
+const INSIGHTS = [
+  {
+    id: 1,
+    number: "First Insight",
+    title: "A Critical Mass",
+    description: "A new spiritual awakening is occurring in human culture, an awakening brought about by a critical mass of individuals who have their lives focused on the spiritual.",
+    puzzle: {
+      question: "What does the First Insight reveal about human consciousness?",
+      options: [
+        "We are entering a new spiritual awakening",
+        "Technology will solve all problems",
+        "Material wealth is the only goal",
+        "Spirituality is declining"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 2,
+    number: "Second Insight",
+    title: "The Longer Now",
+    description: "This awakening represents the creation of a new, more complete worldview, which replaces a five-hundred-year-old preoccupation with secular survival and comfort.",
+    puzzle: {
+      question: "The Second Insight suggests we're moving beyond what?",
+      options: [
+        "Secular survival and comfort",
+        "All technology",
+        "Human relationships",
+        "Natural resources"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 3,
+    number: "Third Insight",
+    title: "A Matter of Energy",
+    description: "We now experience that we live not in a material universe, but in a universe of dynamic energy. Everything extant is a field of sacred energy that we can sense and intuit.",
+    puzzle: {
+      question: "According to the Third Insight, what is everything made of?",
+      options: [
+        "Dynamic energy fields",
+        "Solid matter only",
+        "Random particles",
+        "Empty space"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 4,
+    number: "Fourth Insight",
+    title: "The Struggle for Power",
+    description: "Too often humans cut themselves off from the greater source of this energy and so feel weak and insecure. To gain energy, we tend to manipulate or force others to give us attention and thus energy.",
+    puzzle: {
+      question: "What happens when we cut ourselves off from energy?",
+      options: [
+        "We manipulate others for attention",
+        "We become more powerful",
+        "We find inner peace",
+        "We connect better with nature"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 5,
+    number: "Fifth Insight",
+    title: "The Message of the Mystics",
+    description: "Insecurity and violence ends when we experience an inner connection with divine energy within, a connection described by mystics of all traditions.",
+    puzzle: {
+      question: "How do we end insecurity and violence?",
+      options: [
+        "By connecting with divine energy within",
+        "By controlling others",
+        "By accumulating wealth",
+        "By isolating ourselves"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 6,
+    number: "Sixth Insight",
+    title: "Clearing the Past",
+    description: "Insecurity and violence ends when we experience an inner connection with divine energy within, a connection described by mystics of all traditions.",
+    puzzle: {
+      question: "What must we clear to move forward?",
+      options: [
+        "Past patterns and control dramas",
+        "All relationships",
+        "Material possessions",
+        "Future plans"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 7,
+    number: "Seventh Insight",
+    title: "Engaging the Flow",
+    description: "Knowing our personal mission further enhances the flow of mysterious coincidences, and there are specific ways to engage this flow.",
+    puzzle: {
+      question: "What enhances the flow of coincidences?",
+      options: [
+        "Knowing our personal mission",
+        "Following others blindly",
+        "Avoiding all risks",
+        "Staying in one place"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 8,
+    number: "Eighth Insight",
+    title: "The Interpersonal Ethic",
+    description: "We can increase the frequency of guiding coincidences by uplifting every person that comes into our lives.",
+    puzzle: {
+      question: "How do we increase meaningful coincidences?",
+      options: [
+        "By uplifting every person we meet",
+        "By focusing only on ourselves",
+        "By competing with others",
+        "By avoiding social contact"
+      ],
+      correct: 0
+    }
+  },
+  {
+    id: 9,
+    number: "Ninth Insight",
+    title: "The Emerging Culture",
+    description: "As we all evolve toward the best completion of our spiritual missions, the technological means of survival will be fully automated as humans focus instead on synchronistic growth.",
+    puzzle: {
+      question: "What will humans focus on in the emerging culture?",
+      options: [
+        "Synchronistic growth and spiritual missions",
+        "Only material wealth",
+        "Isolation and competition",
+        "Eliminating all technology"
+      ],
+      correct: 0
+    }
+  }
+];
+
+// ====== ENERGY DYNAMICS SYSTEM ======
+let energyState = {
+  level: 50,
+  give: 0,
+  take: 0,
+  suck: 0,
+  share: 0,
+  particles: []
+};
+
+let energyAnimationId = null;
+const canvas = $('#energyCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+class EnergyParticle {
+  constructor(x, y, type) {
+    this.x = x;
+    this.y = y;
+    this.vx = (Math.random() - 0.5) * 2;
+    this.vy = (Math.random() - 0.5) * 2;
+    this.type = type;
+    this.life = 1.0;
+    this.size = Math.random() * 4 + 2;
+  }
+  
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life -= 0.02;
+    
+    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+  }
+  
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.life;
+    ctx.beginPath();
+    
+    let color;
+    switch(this.type) {
+      case 'give': color = '#4cc9f0'; break;
+      case 'take': color = '#ffb703'; break;
+      case 'suck': color = '#ff006e'; break;
+      case 'share': color = '#8b5cf6'; break;
+    }
+    
+    ctx.fillStyle = color;
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = color;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function animateEnergy() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw connections
+  for (let i = 0; i < energyState.particles.length; i++) {
+    for (let j = i + 1; j < energyState.particles.length; j++) {
+      const p1 = energyState.particles[i];
+      const p2 = energyState.particles[j];
+      const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      if (dist < 100) {
+        ctx.save();
+        ctx.globalAlpha = (1 - dist / 100) * 0.3;
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+  
+  // Update and draw particles
+  energyState.particles = energyState.particles.filter(p => {
+    p.update();
+    p.draw();
+    return p.life > 0;
+  });
+  
+  energyAnimationId = requestAnimationFrame(animateEnergy);
+}
+
+function addEnergyParticles(type, count = 5) {
+  for (let i = 0; i < count; i++) {
+    energyState.particles.push(new EnergyParticle(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      type
+    ));
+  }
+}
+
+function updateEnergy(action) {
+  switch(action) {
+    case 'give':
+      energyState.give++;
+      energyState.level = Math.min(100, energyState.level + 2);
+      addEnergyParticles('give', 8);
+      break;
+    case 'take':
+      energyState.take++;
+      energyState.level = Math.max(0, energyState.level - 1);
+      addEnergyParticles('take', 5);
+      break;
+    case 'suck':
+      energyState.suck++;
+      energyState.level = Math.max(0, energyState.level - 3);
+      addEnergyParticles('suck', 3);
+      break;
+    case 'share':
+      energyState.share++;
+      energyState.level = Math.min(100, energyState.level + 3);
+      addEnergyParticles('share', 10);
+      break;
+  }
+  
+  updateEnergyUI();
+  saveEnergyState();
+}
+
+function updateEnergyUI() {
+  $('#energyFill').style.width = energyState.level + '%';
+  $('#energyValue').textContent = Math.round(energyState.level) + '%';
+  $('#statGive').textContent = energyState.give;
+  $('#statTake').textContent = energyState.take;
+  $('#statSuck').textContent = energyState.suck;
+  $('#statShare').textContent = energyState.share;
+}
+
+function saveEnergyState() {
+  localStorage.setItem('celestine_energy', JSON.stringify(energyState));
+}
+
+function loadEnergyState() {
+  const saved = localStorage.getItem('celestine_energy');
+  if (saved) {
+    energyState = {...energyState, ...JSON.parse(saved)};
+    updateEnergyUI();
+  }
+}
+
+// ====== ADVENTURE SYSTEM ======
+let completedInsights = JSON.parse(localStorage.getItem('celestine_insights') || '[]');
+
+function renderInsights() {
+  const grid = $('#insightsGrid');
+  grid.innerHTML = '';
+  
+  INSIGHTS.forEach((insight, idx) => {
+    const isLocked = idx > 0 && !completedInsights.includes(INSIGHTS[idx - 1].id);
+    const isCompleted = completedInsights.includes(insight.id);
+    
+    const card = document.createElement('div');
+    card.className = `insight-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+    card.innerHTML = `
+      <div class="insight-number">${insight.number}</div>
+      <div class="insight-title">${insight.title}</div>
+      <div class="insight-desc">${insight.description}</div>
+      <div class="insight-progress">
+        <div class="insight-progress-fill" style="width:${isCompleted ? '100' : '0'}%"></div>
+      </div>
+    `;
+    
+    if (!isLocked) {
+      card.addEventListener('click', () => openPuzzle(insight));
+    }
+    
+    grid.appendChild(card);
+  });
+}
+
+function openPuzzle(insight) {
+  const modal = $('#puzzleModal');
+  const question = $('#puzzleQuestion');
+  const options = $('#puzzleOptions');
+  
+  $('#puzzleTitle').textContent = `${insight.number}: ${insight.title}`;
+  question.textContent = insight.puzzle.question;
+  
+  options.innerHTML = '';
+  insight.puzzle.options.forEach((opt, idx) => {
+    const btn = document.createElement('div');
+    btn.className = 'puzzle-option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      if (idx === insight.puzzle.correct) {
+        btn.classList.add('correct');
+        setTimeout(() => {
+          completeInsight(insight.id);
+          closePuzzle();
+        }, 1500);
+      } else {
+        btn.classList.add('wrong');
+        setTimeout(() => {
+          btn.classList.remove('wrong');
+        }, 1000);
+      }
+    });
+    options.appendChild(btn);
+  });
+  
+  modal.classList.add('active');
+}
+
+function closePuzzle() {
+  $('#puzzleModal').classList.remove('active');
+}
+
+function completeInsight(insightId) {
+  if (!completedInsights.includes(insightId)) {
+    completedInsights.push(insightId);
+    localStorage.setItem('celestine_insights', JSON.stringify(completedInsights));
+    renderInsights();
+    updateEnergy('share'); // Reward for completing
+  }
+}
+
+// ====== COLLABORATION ======
+let collabMessages = JSON.parse(localStorage.getItem('celestine_collab') || '[]');
+
+function renderCollabMessages() {
+  const container = $('#collabMessages');
+  container.innerHTML = '';
+  
+  if (collabMessages.length === 0) {
+    container.innerHTML = '<div class="collab-message">Welcome! Share your thoughts about energy dynamics and love...</div>';
+  } else {
+    collabMessages.slice(-10).forEach(msg => {
+      const div = document.createElement('div');
+      div.className = 'collab-message';
+      div.textContent = msg;
+      container.appendChild(div);
+    });
+  }
+}
+
+function addCollabMessage(text) {
+  if (!text.trim()) return;
+  collabMessages.push(text);
+  if (collabMessages.length > 50) collabMessages.shift();
+  localStorage.setItem('celestine_collab', JSON.stringify(collabMessages));
+  renderCollabMessages();
+  updateEnergy('share');
+}
+
+// ====== PLAYER STATE ======
+let data = JSON.parse($('#ECHOSTORY_DATA').textContent);
+const audio = $('#audio');
+
+const els = {
+  albumTitle: $('#albumTitle'),
+  albumSub: $('#albumSub'),
+  jsonStatus: $('#jsonStatus'),
+  btnReload: $('#btnReload'),
+  coverImg: $('#coverImg'),
+  coverSvg: $('#coverSvg'),
+  nowTitle: $('#nowTitle'),
+  nowMeta: $('#nowMeta'),
+  nowNum: $('#nowNum'),
+  statePill: $('#statePill'),
+  playBtn: $('#playBtn'),
+  prevBtn: $('#prevBtn'),
+  nextBtn: $('#nextBtn'),
+  muteBtn: $('#muteBtn'),
+  seek: $('#seek'),
+  timeOut: $('#timeOut'),
+  vol: $('#vol'),
+  speed: $('#speed'),
+  trackList: $('#trackList'),
+  search: $('#search'),
+  lyricsText: $('#lyricsText'),
+  btnShuffle: $('#btnShuffle'),
+  btnLoop: $('#btnLoop'),
+  jsonFile: $('#jsonFile'),
+};
+
+let idx = 0;
+let shuffled = false;
+let loopMode = "off";
+let order = (data.tracks||[]).map((t,i)=>i);
+
+// ====== HELPERS ======
+function pad2(n){ return String(n).padStart(2,'0'); }
+function fmtTime(sec){
+  if (!isFinite(sec)) return "00:00";
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec/60);
+  const s = sec%60;
+  return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
+function setState(s){ els.statePill.textContent = s; }
+function updatePlayIcon(){ els.playBtn.textContent = audio.paused ? "▶" : "❚❚"; }
+
+// ====== MODE SWITCHING ======
+function setMode(mode) {
+  document.body.setAttribute('data-mode', mode);
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  
+  if (mode === 'adventure' && !energyAnimationId) {
+    animateEnergy();
+  }
+}
+
+// ====== JSON / PLAYER ======
+function validateAlbumJson(obj){
+  if (!obj || typeof obj !== "object") throw new Error("JSON is not an object");
+  if (!Array.isArray(obj.tracks) || obj.tracks.length === 0) throw new Error("JSON missing tracks[]");
+  obj.tracks.forEach((t, k) => {
+    if (typeof t.title !== "string") throw new Error("Track " + (k+1) + " missing title");
+    if (typeof t.audio !== "string") throw new Error("Track " + (k+1) + " missing audio path");
+  });
+  return obj;
+}
+function resetFromData(newData, sourceLabel){
+  data = newData;
+  order = (data.tracks||[]).map((t,i)=>i);
+  idx = 0;
+  shuffled = false;
+  loopMode = "off";
+  audio.pause(); audio.currentTime = 0; audio.src = "";
+  els.search.value = "";
+  els.btnShuffle.textContent = "Shuffle";
+  els.btnLoop.textContent = "Loop: Off";
+  els.jsonStatus.textContent = "Data: " + sourceLabel;
+  renderHeader(); renderList();
+  if (order.length) loadByIndex(order[0], false);
+}
+function renderHeader(){
+  els.albumTitle.textContent = data.album_title || "Celestine Prophecy Adventure";
+  els.albumSub.textContent = (data.artist ? data.artist + " • " : "") + (data.tagline || "");
+}
+function renderList(filterText=""){
+  const q = (filterText||"").trim().toLowerCase();
+  els.trackList.innerHTML = "";
+  order.forEach((i) => {
+    const t = data.tracks[i];
+    const hay = (String(t.title||"") + " " + String(t.vibe||"") + " " + String(t.catch||"")).toLowerCase();
+    if (q && !hay.includes(q)) return;
+
+    const div = document.createElement("div");
+    div.className = "trk" + (i === order[idx] ? " active" : "");
+    div.tabIndex = 0;
+    div.innerHTML = `
+      <div class="lefttrk">
+        <span class="num">#${pad2(t.n ?? (i+1))}</span>
+        <div class="ttl">
+          <p class="a">${t.title}</p>
+          <p class="b">${t.vibe || ""}</p>
+        </div>
+      </div>
+      <div class="rt"><span class="tag">${t.catch || ""}</span></div>
+    `;
+    div.addEventListener("click", () => loadByIndex(i, true));
+    div.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); loadByIndex(i, true); }
+    });
+    els.trackList.appendChild(div);
+  });
+}
+async function loadCover(t){
+  const p = t.cover || "";
+  els.coverImg.style.display = "none";
+  els.coverSvg.style.display = "none";
+  els.coverSvg.innerHTML = "";
+  if (!p) return;
+
+  if (p.toLowerCase().endsWith(".svg")) {
+    try {
+      const res = await fetch(p);
+      const txt = await res.text();
+      els.coverSvg.style.display = "block";
+      els.coverSvg.innerHTML = txt;
+    } catch (e) {
+      els.coverImg.style.display = "block";
+      els.coverImg.src = p;
+    }
+  } else {
+    els.coverImg.style.display = "block";
+    els.coverImg.src = p;
+  }
+}
+function loadLyrics(t){
+  const key = t.lyrics_id || "";
+  els.lyricsText.textContent = (key && LYRICS_MAP[key]) ? LYRICS_MAP[key] : "No lyrics loaded for this track.";
+}
+function loadByIndex(trackIndex, autoplay=false){
+  const t = data.tracks[trackIndex];
+  if (!t) return;
+  idx = order.indexOf(trackIndex);
+  audio.src = t.audio || "";
+  audio.playbackRate = parseFloat(els.speed.value || "1");
+  audio.volume = parseFloat(els.vol.value || "0.9");
+  audio.loop = (loopMode === "one");
+
+  els.nowTitle.textContent = t.title;
+  els.nowMeta.textContent = (t.vibe || "") + (t.catch ? " • " + t.catch : "");
+  els.nowNum.textContent = "#" + pad2(t.n ?? (trackIndex+1));
+
+  loadCover(t); loadLyrics(t); renderList(els.search.value);
+
+  setState("Loading…");
+  if (autoplay) {
+    audio.play().then(()=>setState("Playing")).catch(()=>setState("Ready"));
+  } else {
+    setState("Ready");
+  }
+  updatePlayIcon();
+}
+function next(){
+  if (idx < order.length - 1) idx++;
+  else { if (loopMode === "all") idx = 0; else return; }
+  loadByIndex(order[idx], true);
+}
+function prev(){
+  if (audio.currentTime > 4) { audio.currentTime = 0; return; }
+  if (idx > 0) idx--; else { if (loopMode === "all") idx = order.length - 1; else return; }
+  loadByIndex(order[idx], true);
+}
+function toggleShuffle(){
+  shuffled = !shuffled;
+  const currentTrack = order[idx];
+  if (shuffled) {
+    const rest = data.tracks.map((t,i)=>i).filter(i=>i!==currentTrack);
+    for (let i=rest.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    order = [currentTrack, ...rest];
+    idx = 0;
+    els.btnShuffle.textContent = "Shuffle: On";
+  } else {
+    order = data.tracks.map((t,i)=>i);
+    idx = order.indexOf(currentTrack);
+    els.btnShuffle.textContent = "Shuffle";
+  }
+  renderList(els.search.value);
+}
+function cycleLoop(){
+  loopMode = (loopMode === "off") ? "one" : (loopMode === "one") ? "all" : "off";
+  audio.loop = (loopMode === "one");
+  els.btnLoop.textContent = "Loop: " + (loopMode === "off" ? "Off" : loopMode === "one" ? "One" : "All");
+}
+
+let LYRICS_MAP = {};
+
+// ====== EVENTS ======
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+
+document.querySelectorAll('.energy-btn').forEach(btn => {
+  btn.addEventListener('click', () => updateEnergy(btn.dataset.action));
+});
+
+$('#collabInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    addCollabMessage(e.target.value);
+    e.target.value = '';
+  }
+});
+
+$('#puzzleClose').addEventListener('click', closePuzzle);
+$('#puzzleModal').addEventListener('click', (e) => {
+  if (e.target.id === 'puzzleModal') closePuzzle();
+});
+
+els.btnReload.addEventListener("click", async () => {
+  setState("Loading JSON…");
+  try {
+    const res = await fetch("album.json");
+    if (res.ok) {
+      const obj = await res.json();
+      resetFromData(validateAlbumJson(obj), "album.json");
+      setState("Ready");
+    } else {
+      setState("Ready");
+      els.jsonStatus.textContent = "Data: embedded (JSON not found)";
+    }
+  } catch (e) {
+    setState("Ready");
+    els.jsonStatus.textContent = "Data: embedded (JSON load failed)";
+  }
+});
+
+els.playBtn.addEventListener("click", () => {
+  if (!audio.src) return;
+  if (audio.paused) {
+    audio.play().then(()=>setState("Playing")).catch(()=>setState("Ready"));
+  } else {
+    audio.pause(); setState("Paused");
+  }
+  updatePlayIcon();
+});
+els.nextBtn.addEventListener("click", next);
+els.prevBtn.addEventListener("click", prev);
+els.muteBtn.addEventListener("click", () => {
+  audio.muted = !audio.muted;
+  els.muteBtn.textContent = audio.muted ? "🔇" : "🔈";
+});
+els.vol.addEventListener("input", () => audio.volume = parseFloat(els.vol.value || "0.9"));
+els.speed.addEventListener("change", () => audio.playbackRate = parseFloat(els.speed.value || "1"));
+els.seek.addEventListener("input", () => {
+  if (!isFinite(audio.duration)) return;
+  const p = parseFloat(els.seek.value)/1000;
+  audio.currentTime = p * audio.duration;
+});
+els.search.addEventListener("input", () => renderList(els.search.value));
+els.btnShuffle.addEventListener("click", toggleShuffle);
+els.btnLoop.addEventListener("click", cycleLoop);
+
+audio.addEventListener("timeupdate", () => {
+  if (!isFinite(audio.duration)) return;
+  const p = (audio.currentTime / audio.duration);
+  els.seek.value = String(Math.max(0, Math.min(1000, Math.floor(p*1000))));
+  els.timeOut.textContent = fmtTime(audio.currentTime) + " / " + fmtTime(audio.duration);
+});
+audio.addEventListener("play", () => { setState("Playing"); updatePlayIcon(); });
+audio.addEventListener("pause", () => { setState("Paused"); updatePlayIcon(); });
+audio.addEventListener("ended", () => {
+  updatePlayIcon();
+  if (loopMode === "one") return;
+  next();
+});
+
+document.addEventListener("keydown", (e) => {
+  const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+  if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+  if (e.key === " ") { e.preventDefault(); els.playBtn.click(); }
+  if (e.key === "ArrowRight") next();
+  if (e.key === "ArrowLeft") prev();
+  if (e.key.toLowerCase() === "m") els.muteBtn.click();
+  if (e.key.toLowerCase() === "s") toggleShuffle();
+  if (e.key.toLowerCase() === "l") cycleLoop();
+});
+
+// ====== INIT ======
+setMode('player');
+loadEnergyState();
+renderInsights();
+renderCollabMessages();
+renderHeader();
+renderList();
+if (order.length) loadByIndex(order[0], false);
+</script>
+</body>
+</html>

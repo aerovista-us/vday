@@ -31,6 +31,7 @@
         <button class="btn" id="lyricsBtn">Lyrics</button>
         <button class="btn" id="conceptBtn">Concept</button>
         <button class="btn" id="statsBtn">Stats</button>
+        <a href="./adventure.html" class="btn">Adventure</a>
       </div>
     </div>
   </div>
@@ -420,8 +421,20 @@
       $("albumSubtitle").textContent = album.drop_title || "Experience Drop";
       $("albumDesc").textContent = album.description || "";
 
-      // Default track
-      idx = 0;
+      // Check if coming from adventure page with track selection
+      const adventureTrack = localStorage.getItem('ev_track');
+      if (adventureTrack) {
+        const trackIdx = album.tracks.findIndex(t => t.id === adventureTrack);
+        if (trackIdx >= 0) {
+          idx = trackIdx;
+          localStorage.removeItem('ev_track'); // Clear after use
+        } else {
+          idx = 0;
+        }
+      } else {
+        idx = 0;
+      }
+      
       renderTracks();
       renderNow();
       loadAudioForCurrent(false);
