@@ -888,13 +888,19 @@
     }
 
     function saveEnergyState() {
-      localStorage.setItem('celestine_energy', JSON.stringify(energyState));
+      const { particles, ...stateToSave } = energyState;
+      localStorage.setItem('celestine_energy', JSON.stringify(stateToSave));
     }
 
     function loadEnergyState() {
       const saved = localStorage.getItem('celestine_energy');
       if (saved) {
-        energyState = {...energyState, ...JSON.parse(saved)};
+        const parsed = JSON.parse(saved);
+        energyState = {
+          ...energyState,
+          ...parsed,
+          particles: [] // Reset particles - they can't be serialized properly
+        };
         updateEnergyUI();
       }
     }
