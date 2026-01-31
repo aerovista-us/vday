@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff2bd6"/>
+      <stop offset="100%" stop-color="#26e6ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Aura Ring -->
+  <circle cx="32" cy="32" r="24" fill="none" stroke="url(#g)" stroke-width="4"/>
+
+  <!-- Eye Shape -->
+  <path d="M8 32s10-16 24-16 24 16 24 16-10 16-24 16S8 32 8 32Z"
+        fill="none" stroke="url(#g)" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Pupil -->
+  <circle cx="32" cy="32" r="6" fill="url(#g)"/>
+</svg>
