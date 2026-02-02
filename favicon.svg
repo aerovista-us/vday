@@ -5,14 +5,8 @@
       <stop offset="100%" stop-color="#26e6ff"/>
     </linearGradient>
   </defs>
-
-  <!-- Aura Ring -->
   <circle cx="32" cy="32" r="24" fill="none" stroke="url(#g)" stroke-width="4"/>
-
-  <!-- Eye Shape -->
   <path d="M8 32s10-16 24-16 24 16 24 16-10 16-24 16S8 32 8 32Z"
         fill="none" stroke="url(#g)" stroke-width="4" stroke-linejoin="round"/>
-
-  <!-- Pupil -->
   <circle cx="32" cy="32" r="6" fill="url(#g)"/>
 </svg>

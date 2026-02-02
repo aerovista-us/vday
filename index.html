@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0b0c10" />
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
   <title>EchoVerse • Album Player</title>
 
   <!-- ✅ Umami (replace with your values) -->
@@ -14,7 +15,6 @@
     src="UMAMI_SCRIPT_URL"
     data-website-id="UMAMI_WEBSITE_ID"
   ></script>
-<style></style>
 </head>
 
 <body data-theme="anti">
@@ -46,6 +46,7 @@
             <div class="album" id="albumTitle">Loading…</div>
             <div class="name" id="albumSubtitle">Please wait</div>
             <div class="desc" id="albumDesc"></div>
+            <div class="desc" id="bootError" style="display:none;color:var(--accent3)"></div>
           </div>
           <div class="pill" id="albumTag">JSON-driven • GitHub Pages</div>
         </div>
@@ -417,7 +418,20 @@
       });
 
       // Load JSON
-      album = await (await fetch("./album.json", { cache: "no-store" })).json();
+      try {
+        const res = await fetch("./album.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("album.json fetch failed: " + res.status);
+        album = await res.json();
+      } catch (err) {
+        console.error(err);
+        $("albumTitle").textContent = "EchoVerse Album";
+        $("albumSubtitle").textContent = "Missing album.json";
+        const be = $("bootError");
+        be.style.display = "block";
+        be.textContent = "Could not load ./album.json. Make sure it exists in the same folder as index.html (GitHub Pages: same directory).";
+        return;
+      }
+
       $("albumTitle").textContent = album.album_title || "EchoVerse Album";
       $("albumSubtitle").textContent = album.drop_title || "Experience Drop";
       $("albumDesc").textContent = album.description || "";
@@ -506,4 +520,3 @@
   </script>
 </body>
 </html>
-
