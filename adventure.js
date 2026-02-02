@@ -147,7 +147,170 @@
     twin:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M24 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M40 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M32 34l4 6-4 6-4-6 4-6Z"/></svg>`
   };
 
-  function buildTriangleQuest(){
+  
+  // Gate 1 — Align the Sparks (drag 3 sparks into glowing triangle)
+  // This is a true drag-and-drop puzzle (no manual complete).
+  function buildGate1AlignSparksQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="g1-puzzle" aria-label="Align the sparks puzzle">
+        <div class="g1-target" aria-hidden="true"></div>
+        <div class="g1-orb" data-orb="1" style="left: 10%; top: 70%;" aria-label="Spark 1" role="button" tabindex="0"></div>
+        <div class="g1-orb" data-orb="2" style="left: 70%; top: 75%;" aria-label="Spark 2" role="button" tabindex="0"></div>
+        <div class="g1-orb" data-orb="3" style="left: 45%; top: 20%;" aria-label="Spark 3" role="button" tabindex="0"></div>
+        <p class="g1-hint">Drag the three sparks into the glowing triangle.</p>
+      </div>
+    `;
+
+    const puzzle = $(".g1-puzzle", qStage);
+    const target = $(".g1-target", qStage);
+    const orbs = $$(".g1-orb", qStage);
+
+    if (!puzzle || !target || !orbs.length) return ()=>{};
+
+    // Hide manual completion — this gate auto-completes
+    if (qComplete) qComplete.style.display = "none";
+
+    let draggingOrb = null;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    const rect = (el)=> el.getBoundingClientRect();
+
+    function isOrbInsideTarget(orbRect, targetRect){
+      const cx = orbRect.left + orbRect.width / 2;
+      const cy = orbRect.top + orbRect.height / 2;
+      return (
+        cx > targetRect.left &&
+        cx < targetRect.right &&
+        cy > targetRect.top &&
+        cy < targetRect.bottom
+      );
+    }
+
+    function completeGate1(){
+      if (puzzle.classList.contains("g1-solved")) return;
+      puzzle.classList.add("g1-solved");
+      setStatus("Triangle aligned. Gate opened.");
+      setCompleteEnabled(true);
+
+      // auto-complete after a short delay
+      setTimeout(() => {
+        if (!activeInsight) return;
+        activeInsight.classList.add("unlocked");
+        saveProgress();
+        closeModal();
+      }, 650);
+    }
+
+    function checkSolved(){
+      const targetRect = rect(target);
+      const allInside = orbs.every(orb => isOrbInsideTarget(rect(orb), targetRect));
+      if (allInside) completeGate1();
+      else {
+        setStatus("Place all three sparks.");
+        setCompleteEnabled(false);
+      }
+    }
+
+    function onDown(e){
+      const orb = e.currentTarget;
+      draggingOrb = orb;
+      const r = orb.getBoundingClientRect();
+      offsetX = e.clientX - r.left;
+      offsetY = e.clientY - r.top;
+      orb.setPointerCapture?.(e.pointerId);
+      orb.classList.add("dragging");
+      e.preventDefault();
+    }
+
+    function onMove(e){
+      if (!draggingOrb || draggingOrb !== e.currentTarget) return;
+      const puzzleRect = rect(puzzle);
+      let x = e.clientX - puzzleRect.left - offsetX;
+      let y = e.clientY - puzzleRect.top - offsetY;
+
+      const maxX = puzzleRect.width - draggingOrb.offsetWidth;
+      const maxY = puzzleRect.height - draggingOrb.offsetHeight;
+      x = clamp(x, 0, maxX);
+      y = clamp(y, 0, maxY);
+
+      // Keep px positioning for smoother drag
+      draggingOrb.style.left = x + "px";
+      draggingOrb.style.top  = y + "px";
+
+      checkSolved();
+      e.preventDefault();
+    }
+
+    function onUp(e){
+      const orb = e.currentTarget;
+      orb.classList.remove("dragging");
+      draggingOrb = null;
+      try { orb.releasePointerCapture?.(e.pointerId); } catch(_e){}
+      checkSolved();
+      e.preventDefault();
+    }
+
+    // Accessibility: keyboard nudges
+    function onKey(e){
+      const orb = e.currentTarget;
+      const step = (e.shiftKey ? 16 : 6);
+      const puzzleRect = rect(puzzle);
+
+      const curL = parseFloat(orb.style.left || "0");
+      const curT = parseFloat(orb.style.top  || "0");
+
+      let x = curL, y = curT;
+      if (e.key === "ArrowLeft") x -= step;
+      else if (e.key === "ArrowRight") x += step;
+      else if (e.key === "ArrowUp") y -= step;
+      else if (e.key === "ArrowDown") y += step;
+      else return;
+
+      const maxX = puzzleRect.width - orb.offsetWidth;
+      const maxY = puzzleRect.height - orb.offsetHeight;
+      orb.style.left = clamp(x, 0, maxX) + "px";
+      orb.style.top  = clamp(y, 0, maxY) + "px";
+      checkSolved();
+      e.preventDefault();
+    }
+
+    orbs.forEach(orb => {
+      // convert % to px once for consistent dragging
+      const pr = rect(puzzle);
+      const or = rect(orb);
+      const leftPct = parseFloat((orb.style.left||"0").replace("%",""))/100;
+      const topPct  = parseFloat((orb.style.top||"0").replace("%",""))/100;
+      if (pr.width && pr.height){
+        orb.style.left = (leftPct * (pr.width - or.width)) + "px";
+        orb.style.top  = (topPct * (pr.height - or.height)) + "px";
+      }
+      orb.addEventListener("pointerdown", onDown);
+      orb.addEventListener("pointermove", onMove);
+      orb.addEventListener("pointerup", onUp);
+      orb.addEventListener("pointercancel", onUp);
+      orb.addEventListener("keydown", onKey);
+    });
+
+    // Kick status
+    setStatus("Place all three sparks.");
+    setCompleteEnabled(false);
+
+    // Cleanup
+    return ()=> {
+      if (qComplete) qComplete.style.display = "";
+      orbs.forEach(orb=>{
+        orb.removeEventListener("pointerdown", onDown);
+        orb.removeEventListener("pointermove", onMove);
+        orb.removeEventListener("pointerup", onUp);
+        orb.removeEventListener("pointercancel", onUp);
+        orb.removeEventListener("keydown", onKey);
+      });
+    };
+  }
+
+function buildTriangleQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `<div class="qhelp">Drag the three sparks onto the three target nodes to form a triangle.</div>`;
     const stage = document.createElement("div");
@@ -815,7 +978,7 @@
       return;
     }
     switch(String(insightId)){
-      case "1": cleanupQuest = buildTriangleQuest(); break;
+      case "1": cleanupQuest = buildGate1AlignSparksQuest(); break;
       case "2": cleanupQuest = buildTuneQuest(); break;
       case "3": cleanupQuest = buildSwipeCutQuest(); break;
       case "4": cleanupQuest = buildHoldChargeQuest(); break;
