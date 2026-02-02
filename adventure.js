@@ -1072,3 +1072,190 @@ function buildTriangleQuest(){
     $$(".insight.unlocked").forEach(el=>el.classList.remove("unlocked"));
   });
 })();
+
+
+
+/* =========================================================
+   EV_SKYFIELD — Canvas Starfield + Constellation Sketch
+   - Lightweight: no deps, pointer-events none on canvas
+   - Click near stars to "link" them; double-click clears
+   - Subtle twinkle + parallax on mouse move
+========================================================= */
+(function(){
+  const SKY_TAG = "EV_SKYFIELD";
+  // guard (in case bundled twice)
+  if (window[SKY_TAG]) return;
+  window[SKY_TAG] = true;
+
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+  function init(){
+    const canvas = document.getElementById("sky");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { alpha:true });
+
+    let w=0,h=0,dpr=1;
+    let stars=[];
+    let links=[]; // indices of selected stars
+    let mouse = {x:0,y:0, tx:0, ty:0, has:false};
+    let t0 = performance.now();
+
+    function resize(){
+      dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      w = Math.floor(window.innerWidth);
+      h = Math.floor(window.innerHeight);
+      canvas.width = Math.floor(w*dpr);
+      canvas.height = Math.floor(h*dpr);
+      canvas.style.width = w+"px";
+      canvas.style.height = h+"px";
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      buildStars();
+    }
+
+    function rand(min,max){ return min + Math.random()*(max-min); }
+
+    function buildStars(){
+      const area = w*h;
+      const count = clamp(Math.round(area/18000), 60, 160);
+      stars = [];
+      for(let i=0;i<count;i++){
+        const r = rand(0.8, 1.9);
+        const b = rand(0.55, 1.0); // brightness
+        const hue = rand(190, 320); // cyan->magenta range
+        stars.push({
+          x: rand(0,w),
+          y: rand(0,h),
+          r,
+          b,
+          tw: rand(0.6, 1.4),
+          ph: rand(0, Math.PI*2),
+          hue
+        });
+      }
+      // reset links if they point out of range
+      links = links.filter(idx => idx>=0 && idx<stars.length);
+    }
+
+    function drawBackground(){
+      // very soft vignette
+      ctx.clearRect(0,0,w,h);
+      const g = ctx.createRadialGradient(w*0.5,h*0.35, 0, w*0.5,h*0.55, Math.max(w,h)*0.75);
+      g.addColorStop(0, "rgba(255,255,255,0.03)");
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0,0,w,h);
+    }
+
+    function drawStars(now){
+      const tt = (now - t0)/1000;
+      const px = mouse.has ? (mouse.x - w/2)*0.015 : 0;
+      const py = mouse.has ? (mouse.y - h/2)*0.015 : 0;
+
+      for(let i=0;i<stars.length;i++){
+        const s = stars[i];
+        const tw = 0.75 + 0.25*Math.sin(tt*s.tw + s.ph);
+        const alpha = clamp(s.b*tw, 0.15, 1);
+        const x = s.x + px*(0.6 + s.r*0.25);
+        const y = s.y + py*(0.6 + s.r*0.25);
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${s.hue}, 95%, 70%, ${alpha*0.65})`;
+        ctx.arc(x, y, s.r*1.3, 0, Math.PI*2);
+        ctx.fill();
+
+        // tiny glow
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${s.hue}, 95%, 75%, ${alpha*0.12})`;
+        ctx.arc(x, y, s.r*4.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function drawConstellation(now){
+      if (!links.length) return;
+      const tt = (now - t0)/1000;
+      const pulse = 0.65 + 0.35*Math.sin(tt*2.2);
+      ctx.lineWidth = 1.25;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = `rgba(255,255,255,${0.18*pulse})`;
+      ctx.beginPath();
+      for(let i=0;i<links.length;i++){
+        const a = stars[links[i]];
+        if (!a) continue;
+        const x = a.x, y = a.y;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+
+      // highlight nodes
+      for(const idx of links){
+        const s = stars[idx];
+        if(!s) continue;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${0.35*pulse})`;
+        ctx.arc(s.x, s.y, Math.max(2.2, s.r*1.6), 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    function render(now){
+      drawBackground();
+      drawStars(now);
+      drawConstellation(now);
+      requestAnimationFrame(render);
+    }
+
+    function nearestStar(x,y, maxDist=28){
+      let best=-1, bestD=maxDist*maxDist;
+      for(let i=0;i<stars.length;i++){
+        const s=stars[i];
+        const dx=s.x-x, dy=s.y-y;
+        const d=dx*dx+dy*dy;
+        if(d<bestD){ best=i; bestD=d; }
+      }
+      return best;
+    }
+
+    // Interactions: click near star to add to links; double click clears
+    function onClick(e){
+      // ignore clicks when modal/drawer open if you want; but safe to allow
+      const x = e.clientX, y = e.clientY;
+      const idx = nearestStar(x,y, 30);
+      if (idx<0) return;
+      if (!links.includes(idx)){
+        links.push(idx);
+        if (links.length>7) links.shift();
+      } else {
+        // clicking an already-linked star removes it
+        links = links.filter(i=>i!==idx);
+      }
+    }
+    function onDbl(e){ links=[]; }
+
+    function onMove(e){
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      mouse.has = true;
+    }
+
+    window.addEventListener("resize", resize, {passive:true});
+    window.addEventListener("mousemove", onMove, {passive:true});
+    window.addEventListener("touchmove", (e)=>{
+      if (!e.touches || !e.touches[0]) return;
+      mouse.x = e.touches[0].clientX;
+      mouse.y = e.touches[0].clientY;
+      mouse.has = true;
+    }, {passive:true});
+    document.addEventListener("click", onClick, {passive:true});
+    document.addEventListener("dblclick", onDbl, {passive:true});
+
+    resize();
+    requestAnimationFrame(render);
+  }
+
+  if (document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init, {once:true});
+  } else {
+    init();
+  }
+})();

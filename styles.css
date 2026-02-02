@@ -1,3 +1,17 @@
+
+/* ===== Starfield Canvas (Constellation Layer) ===== */
+#sky{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  z-index:0;           /* behind app */
+  pointer-events:none; /* interactions handled at document level */
+  opacity:.85;
+}
+body::before{ z-index:0; }
+.wrap, .topbar, .footerbar, .drawer{ position:relative; z-index:1; }
+
 /* EchoVerse Player — Love/Anti + mystic HUD theming + Track Aura
    Drop-in: link rel="stylesheet" href="./styles.css"
 */
