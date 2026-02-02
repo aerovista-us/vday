@@ -95,6 +95,7 @@
   const qStage = $("#questStage");
   const qStatus = $("#questStatus");
   const qClose = $("#questClose");
+  const qReset = $("#questReset");
   const qComplete = $("#questComplete");
   const qGo = $("#questGo");
 
@@ -130,6 +131,7 @@
     if (qStage) qStage.innerHTML = "";
     setStatus("");
     setCompleteEnabled(false);
+    if (qReset) qReset.style.display = "none";
   }
 
   const clamp = (v,a,b)=> Math.max(a, Math.min(b,v));
@@ -328,6 +330,8 @@
 
     function size(){
       const r=c.getBoundingClientRect();
+      // If the modal isn't visible yet, r will be 0x0. Defer.
+      if (!r.width || !r.height) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       c.width = Math.floor(r.width * dpr);
       c.height = Math.floor(r.height * dpr);
@@ -440,7 +444,8 @@
     c.addEventListener("pointerup", up);
     c.addEventListener("pointercancel", up);
 
-    size();
+    // Defer first layout pass until after modal paint
+    requestAnimationFrame(()=>{ requestAnimationFrame(size); });
     setStatus("Swipe across each segment.");
     setCompleteEnabled(false);
 
@@ -588,7 +593,8 @@
     window.addEventListener("resize", size);
     c.addEventListener("pointermove", move);
 
-    size();
+    // Defer first layout pass until after modal paint
+    requestAnimationFrame(()=>{ requestAnimationFrame(size); });
     raf=requestAnimationFrame(step);
 
     return ()=>{ window.removeEventListener("resize", size); c.removeEventListener("pointermove", move); if (raf) cancelAnimationFrame(raf); };
@@ -803,8 +809,9 @@
     clearStage();
     const unlocked = activeInsight?.classList.contains("unlocked");
     if (unlocked){
-      setStatus("Already completed.");
+      setStatus("Already completed. You can reset this gate if you want to replay it.");
       setCompleteEnabled(true);
+      if (qReset) qReset.style.display = "inline-flex";
       return;
     }
     switch(String(insightId)){
@@ -852,13 +859,16 @@
           qGo.style.display = "inline-flex";
           qGo.dataset.track = trackId;
         } else {
-          qGo.style.display = "none";
+          // Still let people jump to the player, even if the gate isn't tied to a specific track
+          qGo.style.display = "inline-flex";
           qGo.dataset.track = "";
+          qGo.textContent = "Go to Player";
         }
       }
 
-      setupQuest(card.dataset.insight);
+      // Open first so canvas-based quests can measure correctly
       openModal();
+      requestAnimationFrame(()=> setupQuest(card.dataset.insight));
     });
   });
 
@@ -866,7 +876,7 @@
   modal?.addEventListener("click", (e)=>{ if (e.target === modal) closeModal(); });
   window.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
 
-    qComplete?.addEventListener("click", ()=>{
+  qComplete?.addEventListener("click", ()=>{
     if (qComplete?.disabled) return;
     if (activeInsight){
       activeInsight.classList.add("unlocked");
@@ -877,9 +887,25 @@
     closeModal();
   });
 
+  // Reset a single gate
+  qReset?.addEventListener("click", ()=>{
+    if (!activeInsight) return;
+    activeInsight.classList.remove("unlocked");
+    saveProgress();
+    // Rebuild the quest interaction immediately
+    requestAnimationFrame(()=> setupQuest(activeInsight.dataset.insight));
+  });
+
   qGo?.addEventListener("click", ()=>{
     const trackId = qGo.dataset.track || "";
     if (trackId) localStorage.setItem("ev_track", trackId);
     window.location.href = "./index.html";
+  });
+
+  // Reset all progress
+  $("#resetAll")?.addEventListener("click", ()=>{
+    if (!confirm("Reset all gate progress?")) return;
+    localStorage.removeItem(PROG_KEY);
+    $$(".insight.unlocked").forEach(el=>el.classList.remove("unlocked"));
   });
 })();
