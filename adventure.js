@@ -92,11 +92,14 @@
   const modal = $("#questModal");
   const qTitle = $("#questTitle");
   const qDesc = $("#questDesc");
+  const qStage = $("#questStage");
+  const qStatus = $("#questStatus");
   const qClose = $("#questClose");
   const qComplete = $("#questComplete");
   const qGo = $("#questGo");
 
   let activeInsight = null;
+  let cleanupQuest = null;
 
   function openModal(){
     if (!modal) return;
@@ -107,6 +110,717 @@
     if (!modal) return;
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
+    clearStage();
+  }
+
+
+  function setStatus(msg){
+    if (!qStatus) return;
+    qStatus.textContent = msg || "";
+  }
+  function setCompleteEnabled(on){
+    if (!qComplete) return;
+    qComplete.disabled = !on;
+    qComplete.style.opacity = on ? "1" : ".55";
+    qComplete.style.cursor = on ? "pointer" : "not-allowed";
+  }
+  function clearStage(){
+    if (cleanupQuest) { try{ cleanupQuest(); }catch(_e){} }
+    cleanupQuest = null;
+    if (qStage) qStage.innerHTML = "";
+    setStatus("");
+    setCompleteEnabled(false);
+  }
+
+  const clamp = (v,a,b)=> Math.max(a, Math.min(b,v));
+
+  // Minimal inline sigils (currentColor)
+  const Sigils = {
+    triad:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M32 6 52 14v18c0 14-9 24-20 28C21 56 12 46 12 32V14L32 6Zm0 10-12 5v11c0 9 5.6 16.7 12 19.8 6.4-3.1 12-10.8 12-19.8V21L32 16Z"/></svg>`,
+    wave:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M10 34c8-10 14 10 22 0s14 10 22 0v6c-8 10-14-10-22 0s-14-10-22 0v-6Z"/><path fill="currentColor" d="M50 14l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6Z" opacity=".55"/></svg>`,
+    cord:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M14 18c10 0 10 10 20 10s10-10 20-10v6c-10 0-10 10-20 10S24 24 14 24v-6Z"/><path fill="currentColor" d="M31 18h2v28h-2V18Z"/><path fill="currentColor" d="M28 32l4-4 4 4-4 4-4-4Z"/></svg>`,
+    ring:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M32 10c12.15 0 22 9.85 22 22S44.15 54 32 54 10 44.15 10 32 19.85 10 32 10Zm0 6c-8.84 0-16 7.16-16 16s7.16 16 16 16 16-7.16 16-16-7.16-16-16-16Z"/></svg>`,
+    flame:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M30 6c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M28 30h4v22c0 3.3-2.7 6-6 6h-2v-4h2c1.1 0 2-.9 2-2V30Z"/></svg>`,
+    eye:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M32 14c14 0 24 18 24 18S46 50 32 50 8 32 8 32s10-18 24-18Zm0 8c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10-4.48-10-10-10Z"/><path fill="currentColor" d="M32 26a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>`,
+    twin:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M24 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M40 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M32 34l4 6-4 6-4-6 4-6Z"/></svg>`
+  };
+
+  function buildTriangleQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `<div class="qhelp">Drag the three sparks onto the three target nodes to form a triangle.</div>`;
+    const stage = document.createElement("div");
+    stage.style.position="relative";
+    stage.style.height="170px";
+    stage.style.marginTop="10px";
+    qStage.appendChild(stage);
+
+    const targets = [
+      {x: "50%", y:"28%"},
+      {x: "26%", y:"72%"},
+      {x: "74%", y:"72%"},
+    ].map((t,i)=>{
+      const el=document.createElement("div");
+      el.className="qtarget";
+      el.style.left=`calc(${t.x} - 12px)`;
+      el.style.top=`calc(${t.y} - 12px)`;
+      el.dataset.idx=String(i);
+      stage.appendChild(el);
+      return el;
+    });
+
+    const sparks = [0,1,2].map(i=>{
+      const s=document.createElement("div");
+      s.className="qspark";
+      s.style.left = (14 + i*26) + "%";
+      s.style.top = "118px";
+      s.dataset.placed="";
+      stage.appendChild(s);
+      return s;
+    });
+
+    let active=null, offX=0, offY=0;
+
+    function checkDone(){
+      const ok = sparks.every(s => s.dataset.placed !== "");
+      if (ok){
+        setStatus("Triangle aligned. Gate opened.");
+        setCompleteEnabled(true);
+      } else {
+        setStatus("Place all three sparks.");
+        setCompleteEnabled(false);
+      }
+    }
+
+    function syncTargets(){
+      targets.forEach(t=>t.classList.remove("filled"));
+      sparks.forEach(sp=>{
+        if (sp.dataset.placed){
+          const t=targets.find(tt=>tt.dataset.idx===sp.dataset.placed);
+          if (t) t.classList.add("filled");
+        }
+      });
+    }
+
+    function placeIfNear(spark){
+      const sr = spark.getBoundingClientRect();
+      const sx = sr.left + sr.width/2;
+      const sy = sr.top + sr.height/2;
+      let best=null, bestD=1e12;
+      targets.forEach(t=>{
+        const tr=t.getBoundingClientRect();
+        const tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
+        const d=(sx-tx)*(sx-tx) + (sy-ty)*(sy-ty);
+        if (d<bestD){ bestD=d; best=t; }
+      });
+      const snapDist = 48*48;
+      if (best && bestD < snapDist){
+        const tr=best.getBoundingClientRect();
+        const pr=stage.getBoundingClientRect();
+        const left = ( (tr.left+tr.width/2) - pr.left ) - 8;
+        const top  = ( (tr.top+tr.height/2) - pr.top ) - 8;
+        spark.style.left = left + "px";
+        spark.style.top  = top + "px";
+        spark.dataset.placed = best.dataset.idx;
+      } else {
+        spark.dataset.placed = "";
+      }
+      syncTargets();
+      checkDone();
+    }
+
+    function down(e){
+      const t=e.target;
+      if (!t.classList.contains("qspark")) return;
+      active=t;
+      const r=t.getBoundingClientRect();
+      offX = e.clientX - r.left;
+      offY = e.clientY - r.top;
+      t.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    }
+    function move(e){
+      if (!active) return;
+      const pr=stage.getBoundingClientRect();
+      const x = clamp(e.clientX - pr.left - offX, 0, pr.width-16);
+      const y = clamp(e.clientY - pr.top  - offY, 0, pr.height-16);
+      active.style.left = x + "px";
+      active.style.top  = y + "px";
+      active.dataset.placed = "";
+      syncTargets();
+      checkDone();
+      e.preventDefault();
+    }
+    function up(e){
+      if (!active) return;
+      placeIfNear(active);
+      active=null;
+      e.preventDefault();
+    }
+
+    stage.addEventListener("pointerdown", down);
+    stage.addEventListener("pointermove", move);
+    stage.addEventListener("pointerup", up);
+    stage.addEventListener("pointercancel", up);
+
+    setStatus("Place all three sparks.");
+    setCompleteEnabled(false);
+
+    return ()=> {
+      stage.removeEventListener("pointerdown", down);
+      stage.removeEventListener("pointermove", move);
+      stage.removeEventListener("pointerup", up);
+      stage.removeEventListener("pointercancel", up);
+    };
+  }
+
+  function buildTuneQuest(){
+    if (!qStage) return ()=>{};
+    const target = 62 + Math.floor(Math.random()*28); // 62-89
+    let hold=0, raf=0, last=0;
+
+    qStage.innerHTML = `
+      <div class="qhelp">Tune the dial until the signal locks. Hold it steady for 1 second.</div>
+      <div class="qdial">
+        <div class="qchip">Target: <span class="mono">${target}</span> Hz</div>
+        <input id="dial" type="range" min="40" max="110" value="70" />
+        <div class="qprogress" aria-label="Lock progress"><div id="lockFill"></div></div>
+      </div>
+    `;
+    const dial = $("#dial", qStage);
+    const fill = $("#lockFill", qStage);
+
+    function step(ts){
+      if (!last) last=ts;
+      const dt = (ts-last)/1000; last=ts;
+      const v = Number(dial.value);
+      const ok = Math.abs(v - target) <= 2;
+      if (ok) hold = Math.min(1, hold + dt/1.0);
+      else hold = Math.max(0, hold - dt/0.7);
+      if (fill) fill.style.width = Math.round(hold*100) + "%";
+
+      if (hold >= 1){
+        setStatus("Signal locked. Static turns into guidance.");
+        setCompleteEnabled(true);
+      } else {
+        setStatus(ok ? "Hold steady…" : "Find the frequency.");
+        setCompleteEnabled(false);
+      }
+      raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return ()=> { if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildSwipeCutQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Swipe across the cord three times to sever it.</div>
+      <canvas class="qcanvas" id="ropeCanvas" aria-label="Swipe-to-cut canvas"></canvas>
+      <div class="qchip" style="margin-top:10px">Cuts: <span id="cuts" class="mono">0</span>/3</div>
+    `;
+    const c = $("#ropeCanvas", qStage);
+    const cutsEl = $("#cuts", qStage);
+    const ctx = c.getContext("2d");
+    let cuts=0;
+    const cutSeg=[false,false,false];
+    let drawing=false;
+    let lastPt=null;
+
+    function size(){
+      const r=c.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      c.width = Math.floor(r.width * dpr);
+      c.height = Math.floor(r.height * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      draw();
+    }
+
+    function draw(){
+      const w=c.getBoundingClientRect().width;
+      const h=c.getBoundingClientRect().height;
+      ctx.clearRect(0,0,w,h);
+      const y=h/2;
+      // background rope
+      ctx.lineCap="round";
+      ctx.lineWidth=7;
+      ctx.strokeStyle="rgba(255,255,255,.18)";
+      ctx.beginPath();
+      ctx.moveTo(16,y);
+      ctx.lineTo(w-16,y);
+      ctx.stroke();
+
+      // segments
+      const segW=(w-32)/3;
+      for(let i=0;i<3;i++){
+        const x0=16+i*segW;
+        ctx.lineWidth=10;
+        ctx.strokeStyle=cutSeg[i] ? "rgba(255,255,255,.06)" : "rgba(255,255,255,.28)";
+        ctx.beginPath();
+        ctx.moveTo(x0+12,y);
+        ctx.lineTo(x0+segW-12,y);
+        ctx.stroke();
+
+        if (cutSeg[i]){
+          ctx.lineWidth=2;
+          ctx.strokeStyle="rgba(255,255,255,.10)";
+          ctx.beginPath();
+          ctx.moveTo(x0+segW/2,y-22);
+          ctx.lineTo(x0+segW/2,y+22);
+          ctx.stroke();
+        }
+      }
+
+      // swipe zone
+      ctx.setLineDash([7,7]);
+      ctx.lineWidth=1;
+      ctx.strokeStyle="rgba(255,255,255,.10)";
+      ctx.strokeRect(16, y-28, w-32, 56);
+      ctx.setLineDash([]);
+    }
+
+    function pt(e){
+      const r=c.getBoundingClientRect();
+      return {x: e.clientX - r.left, y: e.clientY - r.top};
+    }
+    function segForX(x){
+      const w=c.getBoundingClientRect().width;
+      const segW=(w-32)/3;
+      const rel = x-16;
+      return clamp(Math.floor(rel/segW), 0, 2);
+    }
+
+    function tryCut(p0,p1){
+      if (!p0 || !p1) return;
+      const h=c.getBoundingClientRect().height;
+      const y=h/2;
+      const minY=Math.min(p0.y,p1.y), maxY=Math.max(p0.y,p1.y);
+      if (y < minY-10 || y > maxY+10) return;
+      const minX=Math.min(p0.x,p1.x), maxX=Math.max(p0.x,p1.x);
+      // must cross at least 40px horizontally
+      if ((maxX-minX) < 40) return;
+      const midX = (p0.x+p1.x)/2;
+      const idx = segForX(midX);
+      if (!cutSeg[idx]){
+        cutSeg[idx]=true;
+        cuts++;
+        if (cutsEl) cutsEl.textContent=String(cuts);
+        draw();
+        if (cuts>=3){
+          setStatus("Cord severed. You keep your power.");
+          setCompleteEnabled(true);
+        } else {
+          setStatus("Good cut. Keep going.");
+          setCompleteEnabled(false);
+        }
+      }
+    }
+
+    function down(e){
+      drawing=true;
+      lastPt=pt(e);
+      c.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    }
+    function move(e){
+      if (!drawing) return;
+      const cur=pt(e);
+      tryCut(lastPt, cur);
+      lastPt=cur;
+      e.preventDefault();
+    }
+    function up(e){
+      drawing=false;
+      lastPt=null;
+      e.preventDefault();
+    }
+
+    window.addEventListener("resize", size);
+    c.addEventListener("pointerdown", down);
+    c.addEventListener("pointermove", move);
+    c.addEventListener("pointerup", up);
+    c.addEventListener("pointercancel", up);
+
+    size();
+    setStatus("Swipe across each segment.");
+    setCompleteEnabled(false);
+
+    return ()=> {
+      window.removeEventListener("resize", size);
+      c.removeEventListener("pointerdown", down);
+      c.removeEventListener("pointermove", move);
+      c.removeEventListener("pointerup", up);
+      c.removeEventListener("pointercancel", up);
+    };
+  }
+
+  function buildHoldChargeQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Press and hold to charge the battery to 100%. Releasing early resets.</div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn primary" id="holdBtn" type="button">Hold to Charge</button>
+        <span class="qchip">Charge: <span id="pct" class="mono">0</span>%</span>
+      </div>
+      <div class="qprogress" style="margin-top:10px"><div id="fill"></div></div>
+    `;
+    const btn=$("#holdBtn", qStage);
+    const pct=$("#pct", qStage);
+    const fill=$("#fill", qStage);
+    let holding=false, val=0, raf=0, last=0;
+
+    function step(ts){
+      if (!last) last=ts;
+      const dt=(ts-last)/1000; last=ts;
+      if (holding) val = Math.min(1, val + dt/1.4);
+      else val = 0;
+      const p=Math.round(val*100);
+      if (pct) pct.textContent=String(p);
+      if (fill) fill.style.width = p+"%";
+      if (p>=100){
+        setStatus("Fully charged. You generate clean energy.");
+        setCompleteEnabled(true);
+      } else {
+        setStatus(holding ? "Charging…" : "Press and hold to charge.");
+        setCompleteEnabled(false);
+      }
+      raf=requestAnimationFrame(step);
+    }
+
+    function start(){
+      holding=true;
+      btn.classList.add("active");
+    }
+    function stop(){
+      holding=false;
+      btn.classList.remove("active");
+    }
+
+    btn.addEventListener("pointerdown", (e)=>{ start(); btn.setPointerCapture?.(e.pointerId); e.preventDefault(); });
+    btn.addEventListener("pointerup", (e)=>{ stop(); e.preventDefault(); });
+    btn.addEventListener("pointercancel", (e)=>{ stop(); e.preventDefault(); });
+    btn.addEventListener("pointerleave", ()=>{ if (holding) stop(); });
+
+    raf=requestAnimationFrame(step);
+    setStatus("Press and hold to charge.");
+    setCompleteEnabled(false);
+
+    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildFocusRingQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Ignite the match, then keep your pointer inside the ring for 3 seconds.</div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn primary" id="ignite" type="button">Ignite</button>
+        <span class="qchip">Focus: <span id="sec" class="mono">0.0</span>s / 3.0s</span>
+      </div>
+      <canvas class="qcanvas" id="ringCanvas" aria-label="Focus ring"></canvas>
+    `;
+    const ignite=$("#ignite", qStage);
+    const secEl=$("#sec", qStage);
+    const c=$("#ringCanvas", qStage);
+    const ctx=c.getContext("2d");
+
+    let armed=false, inside=false, hold=0, raf=0, last=0;
+    let ring={x:0,y:0,r:60};
+
+    function size(){
+      const r=c.getBoundingClientRect();
+      const dpr=Math.min(2, window.devicePixelRatio||1);
+      c.width=Math.floor(r.width*dpr);
+      c.height=Math.floor(r.height*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ring.x=r.width/2; ring.y=r.height/2; ring.r=Math.min(70, Math.min(r.width,r.height)/3);
+      draw();
+    }
+    function draw(){
+      const w=c.getBoundingClientRect().width;
+      const h=c.getBoundingClientRect().height;
+      ctx.clearRect(0,0,w,h);
+      // glow ring
+      ctx.lineWidth=5;
+      ctx.strokeStyle=armed ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.16)";
+      ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI*2); ctx.stroke();
+
+      // inner
+      ctx.fillStyle="rgba(0,0,0,.10)";
+      ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r-10, 0, Math.PI*2); ctx.fill();
+
+      // flame dot
+      ctx.fillStyle= armed ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.18)";
+      ctx.beginPath(); ctx.arc(ring.x, ring.y-ring.r+18, 5, 0, Math.PI*2); ctx.fill();
+    }
+
+    function pt(e){
+      const r=c.getBoundingClientRect();
+      return {x:e.clientX-r.left, y:e.clientY-r.top};
+    }
+    function inRing(p){
+      const dx=p.x-ring.x, dy=p.y-ring.y;
+      return (dx*dx+dy*dy) <= (ring.r-6)*(ring.r-6);
+    }
+
+    function step(ts){
+      if (!last) last=ts;
+      const dt=(ts-last)/1000; last=ts;
+      if (armed && inside) hold = Math.min(3, hold+dt);
+      else hold = Math.max(0, hold-dt*1.2);
+      if (secEl) secEl.textContent = hold.toFixed(1);
+
+      if (hold>=3){
+        setStatus("Focus achieved. Fire becomes direction.");
+        setCompleteEnabled(true);
+      } else {
+        setStatus(!armed ? "Ignite first." : (inside ? "Hold focus…" : "Stay inside the ring."));
+        setCompleteEnabled(false);
+      }
+      raf=requestAnimationFrame(step);
+    }
+
+    ignite.addEventListener("click", ()=>{ armed=true; hold=0; draw(); });
+
+    function move(e){
+      if (!armed) return;
+      inside = inRing(pt(e));
+    }
+
+    window.addEventListener("resize", size);
+    c.addEventListener("pointermove", move);
+
+    size();
+    raf=requestAnimationFrame(step);
+
+    return ()=>{ window.removeEventListener("resize", size); c.removeEventListener("pointermove", move); if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildObserverHoldQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Press and hold the eye for 2 seconds. Stay still (no big movement).</div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn primary" id="eyeHold" type="button" aria-label="Hold the eye">${Sigils.eye}</button>
+        <span class="qchip">Stillness: <span id="still" class="mono">0.0</span>s / 2.0s</span>
+      </div>
+      <div class="qprogress" style="margin-top:10px"><div id="fill"></div></div>
+    `;
+    const btn=$("#eyeHold", qStage);
+    const still=$("#still", qStage);
+    const fill=$("#fill", qStage);
+
+    let holding=false, t=0, raf=0, last=0;
+    let startX=0,startY=0;
+    function step(ts){
+      if (!last) last=ts;
+      const dt=(ts-last)/1000; last=ts;
+      if (holding) t = Math.min(2, t+dt);
+      else t = Math.max(0, t-dt*1.3);
+      if (still) still.textContent=t.toFixed(1);
+      if (fill) fill.style.width = Math.round((t/2)*100)+"%";
+      if (t>=2){
+        setStatus("Observer mode unlocked. You notice the pattern.");
+        setCompleteEnabled(true);
+      } else {
+        setStatus(holding ? "Hold still…" : "Press and hold.");
+        setCompleteEnabled(false);
+      }
+      raf=requestAnimationFrame(step);
+    }
+    function down(e){
+      holding=true; t=0;
+      startX=e.clientX; startY=e.clientY;
+      btn.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    }
+    function move(e){
+      if (!holding) return;
+      const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
+      if (dx>22 || dy>22){ holding=false; t=0; }
+    }
+    function up(e){ holding=false; e.preventDefault(); }
+
+    btn.addEventListener("pointerdown", down);
+    btn.addEventListener("pointermove", move);
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", up);
+
+    raf=requestAnimationFrame(step);
+    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildCoCreatorQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Bring both sliders to the same value, then tap Merge.</div>
+      <div class="qrow" style="margin-top:10px">
+        <span class="qchip">A</span><input id="a" type="range" min="0" max="100" value="25">
+        <span class="qchip">B</span><input id="b" type="range" min="0" max="100" value="75">
+      </div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn primary" id="merge" type="button">Merge</button>
+        <span class="qchip">Δ <span id="delta" class="mono">50</span></span>
+      </div>
+    `;
+    const a=$("#a", qStage), b=$("#b", qStage), merge=$("#merge", qStage), delta=$("#delta", qStage);
+    function update(){
+      const d=Math.abs(Number(a.value)-Number(b.value));
+      if (delta) delta.textContent=String(d);
+      merge.disabled = d>3;
+      merge.style.opacity = d>3 ? ".55" : "1";
+    }
+    a.addEventListener("input", update);
+    b.addEventListener("input", update);
+    merge.addEventListener("click", ()=>{
+      setStatus("Merged. Co-creation begins.");
+      setCompleteEnabled(true);
+    });
+    update();
+    setStatus("Match the sliders (Δ ≤ 3).");
+    setCompleteEnabled(false);
+    return ()=>{};
+  }
+
+  function buildIntentionQuest(){
+    if (!qStage) return ()=>{};
+    qStage.innerHTML = `
+      <div class="qhelp">Choose an intention. Hold to seal it.</div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn" data-intent="clarity" type="button">Clarity</button>
+        <button class="qbtn" data-intent="courage" type="button">Courage</button>
+        <button class="qbtn" data-intent="kindness" type="button">Kindness</button>
+      </div>
+      <div class="qrow" style="margin-top:10px">
+        <button class="qbtn primary" id="seal" type="button" disabled>Hold to Seal</button>
+        <span class="qchip">Seal <span id="pct" class="mono">0</span>%</span>
+      </div>
+      <div class="qprogress" style="margin-top:10px"><div id="fill"></div></div>
+    `;
+    let chosen="";
+    const buttons=$$("[data-intent]", qStage);
+    const seal=$("#seal", qStage);
+    const pct=$("#pct", qStage);
+    const fill=$("#fill", qStage);
+
+    buttons.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        buttons.forEach(b=>b.classList.remove("primary"));
+        btn.classList.add("primary");
+        chosen = btn.dataset.intent;
+        seal.disabled=false;
+        setStatus(`Selected: ${chosen}. Hold to seal.`);
+      });
+    });
+
+    let holding=false, val=0, raf=0, last=0;
+    function step(ts){
+      if (!last) last=ts;
+      const dt=(ts-last)/1000; last=ts;
+      if (holding) val = Math.min(1, val + dt/1.0);
+      else val = Math.max(0, val - dt*1.8);
+      const p=Math.round(val*100);
+      if (pct) pct.textContent=String(p);
+      if (fill) fill.style.width=p+"%";
+      if (p>=100){
+        setStatus("Intention sealed. Walk in alignment.");
+        setCompleteEnabled(true);
+      } else {
+        if (!chosen) setStatus("Pick an intention.");
+        setCompleteEnabled(false);
+      }
+      raf=requestAnimationFrame(step);
+    }
+
+    seal.addEventListener("pointerdown",(e)=>{ if (!chosen) return; holding=true; seal.setPointerCapture?.(e.pointerId); e.preventDefault(); });
+    seal.addEventListener("pointerup",(e)=>{ holding=false; e.preventDefault(); });
+    seal.addEventListener("pointercancel",(e)=>{ holding=false; e.preventDefault(); });
+
+    raf=requestAnimationFrame(step);
+    setStatus("Pick an intention.");
+    setCompleteEnabled(false);
+    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildSequenceQuest(){
+    if (!qStage) return ()=>{};
+    const pool=[Sigils.triad,Sigils.wave,Sigils.cord,Sigils.ring,Sigils.flame,Sigils.eye,Sigils.twin];
+    const seq=[0,0,0,0].map(()=> Math.floor(Math.random()*pool.length));
+    let idx=0;
+    qStage.innerHTML = `
+      <div class="qhelp">Watch the sequence, then tap the sigils in order.</div>
+      <div class="qsigils" id="sigils" style="margin-top:10px"></div>
+      <div class="qchip" style="margin-top:10px">Step: <span id="step" class="mono">0</span>/4</div>
+    `;
+    const wrap=$("#sigils", qStage);
+    const stepEl=$("#step", qStage);
+    const sigEls = pool.map((svg, i)=>{
+      const el=document.createElement("div");
+      el.className="qsigil";
+      el.innerHTML=svg;
+      el.dataset.i=String(i);
+      wrap.appendChild(el);
+      return el;
+    });
+
+    function flash(i){
+      sigEls[i].classList.add("active");
+      setTimeout(()=>sigEls[i].classList.remove("active"), 260);
+    }
+    // play sequence
+    let t=0;
+    seq.forEach((s, k)=>{ setTimeout(()=>flash(s), 400 + k*520); t=400 + k*520; });
+    setTimeout(()=>setStatus("Your turn."), t+520);
+
+    function onTap(e){
+      const el=e.currentTarget;
+      const i=Number(el.dataset.i);
+      if (i === seq[idx]){
+        idx++;
+        if (stepEl) stepEl.textContent=String(idx);
+        flash(i);
+        if (idx>=4){
+          setStatus("Pattern complete. You stay in the flow.");
+          setCompleteEnabled(true);
+        } else {
+          setStatus("Good. Next.");
+          setCompleteEnabled(false);
+        }
+      } else {
+        idx=0;
+        if (stepEl) stepEl.textContent="0";
+        setStatus("Reset. Breathe, then try again.");
+        setCompleteEnabled(false);
+      }
+    }
+    sigEls.forEach(el=>el.addEventListener("click", onTap));
+
+    setStatus("Watch first…");
+    setCompleteEnabled(false);
+
+    return ()=>{ sigEls.forEach(el=>el.removeEventListener("click", onTap)); };
+  }
+
+  function setupQuest(insightId){
+    clearStage();
+    const unlocked = activeInsight?.classList.contains("unlocked");
+    if (unlocked){
+      setStatus("Already completed.");
+      setCompleteEnabled(true);
+      return;
+    }
+    switch(String(insightId)){
+      case "1": cleanupQuest = buildTriangleQuest(); break;
+      case "2": cleanupQuest = buildTuneQuest(); break;
+      case "3": cleanupQuest = buildSwipeCutQuest(); break;
+      case "4": cleanupQuest = buildHoldChargeQuest(); break;
+      case "5": cleanupQuest = buildFocusRingQuest(); break;
+      case "6": cleanupQuest = buildObserverHoldQuest(); break;
+      case "7": cleanupQuest = buildCoCreatorQuest(); break;
+      case "8": cleanupQuest = buildIntentionQuest(); break;
+      case "9": cleanupQuest = buildSequenceQuest(); break;
+      default:
+        setStatus("Tap Complete when you're ready.");
+        setCompleteEnabled(true);
+    }
   }
 
   function saveProgress(){
@@ -143,6 +857,7 @@
         }
       }
 
+      setupQuest(card.dataset.insight);
       openModal();
     });
   });
@@ -151,10 +866,13 @@
   modal?.addEventListener("click", (e)=>{ if (e.target === modal) closeModal(); });
   window.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeModal(); });
 
-  qComplete?.addEventListener("click", ()=>{
+    qComplete?.addEventListener("click", ()=>{
+    if (qComplete?.disabled) return;
     if (activeInsight){
       activeInsight.classList.add("unlocked");
       saveProgress();
+      setStatus("Completed.");
+      setCompleteEnabled(true);
     }
     closeModal();
   });
