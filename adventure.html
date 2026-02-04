@@ -4,17 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0b0c10" />
-  <meta name="description" content="EchoVerse Adventure — unlock gates, complete mini-quests, and jump into the matching track." />
+  <meta name="description" content="EchoVerse Adventure — nine signals, nine mini-quests, and a direct jump into the matching track." />
   <link rel="canonical" href="https://aerovista-us.github.io/vday/adventure.html" />
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-05">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <title>EchoVerse • Adventure</title>
+  <title>EchoVerse • The Nine Signals</title>
 
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260204-05">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
@@ -33,7 +33,26 @@
     })();
   </script>
 
-  <script defer src="./pwa.js"></script>
+  <script>
+    (function () {
+      try {
+        // Don't redirect the embedded Adventure overlay inside the player.
+        if (window.self !== window.top) return;
+        const params = new URLSearchParams(window.location.search || "");
+        if (params.has("embed")) return;
+        if (params.has("skipLanding")) return;
+        const seen = localStorage.getItem("ev_seen_landing_v1");
+        if (seen) return;
+
+        const target = new URL("./landing.html", window.location.href);
+        target.searchParams.set("return", window.location.pathname + window.location.search + window.location.hash);
+        window.location.replace(target.toString());
+      } catch {
+        // ignore
+      }
+    })();
+  </script>
+  <script defer src="./pwa.js?v=20260204-05"></script>
 
   <style>
     /* Adventure page sits on top of styles.css, adding only what it needs */
@@ -42,7 +61,7 @@
     .heroTitle { font-size: clamp(26px, 4vw, 40px); font-weight: 950; letter-spacing:.08em; text-transform: uppercase; margin: 14px 0 8px; }
     .subTitle { max-width: 66ch; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.5; }
 
-    .layout { display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; margin-top: 18px; }
+    .layout { display:grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
     @media (max-width: 980px){ .layout{ grid-template-columns: 1fr; } }
 
     .energyRow { display:flex; flex-wrap:wrap; gap: 8px; margin: 10px 0 12px; }
@@ -283,7 +302,7 @@
     <div class="topbar-inner">
       <div class="brand">
         <div class="kicker">EchoVerse • AeroVista</div>
-        <div class="title">Adventure • Nine Gates</div>
+        <div class="title">Adventure • Nine Signals</div>
       </div>
       <div class="controls">
         <button class="btn badge primary" id="themeBtn" title="Toggle theme">
@@ -291,15 +310,16 @@
           <span id="themeLabel">Anti-Love</span>
         </button>
         <button class="btn" id="resetAll" type="button" title="Reset all gate progress">Reset</button>
-        <a class="btn" href="./index.html">Player</a>
+        <a class="btn" href="./index.html" id="playerLink">Player</a>
       </div>
     </div>
   </div>
 
   <main class="page">
     <div class="center">
-      <div class="heroTitle">The Nine Gates</div>
-      <p class="subTitle">Tap an Insight to open its mini-quest. Completing it unlocks the Gate and offers a “Go to Track” jump into the album player.</p>
+      <div class="heroTitle">The Nine Signals</div>
+      <p class="subTitle">Tap an Insight to open its mini-quest. Complete it to unlock that Signal and jump into the matching track. Your constellation builds in the sky as you go.</p>
+      <div class="pill" id="constellationPill" style="margin: 10px auto 0; display: inline-flex" aria-live="polite">Constellation: 0/9</div>
     </div>
 
     <section class="layout">
@@ -333,28 +353,6 @@
         </div>
       </section>
 
-      <section class="card">
-        <div class="hd">
-          <div class="meta">
-            <div class="album">Community</div>
-            <div class="name">Resonance Notes</div>
-            <div class="desc">A lightweight “wall” for now. Later we can swap this for a real guestbook (no auth) or an Umami-powered “heat map”.</div>
-          </div>
-          <div class="pill">Local-only</div>
-        </div>
-        <div class="panel">
-          <div class="section">
-            <h3>Messages</h3>
-            <p class="small" id="msgHint">Stored in your browser only.</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
-              <input id="msgInput" type="text" placeholder="Type a synchronicity..." style="flex:1;min-width:220px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.22);padding:10px 12px;color:var(--text)">
-              <button class="btn primary" id="msgAdd">Add</button>
-              <button class="btn" id="msgClear">Clear</button>
-            </div>
-            <div id="msgList" style="margin-top:10px;max-height:170px;overflow:auto;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.18);padding:10px"></div>
-          </div>
-        </div>
-      </section>
     </section>
 
     <section class="card">
@@ -362,9 +360,9 @@
         <div class="meta">
           <div class="album">Quests</div>
           <div class="name">Tap to Unlock</div>
-          <div class="desc">Each Gate is a mini-quest. Unlocking stores progress locally and offers a direct jump to a connected track.</div>
+          <div class="desc">Each Signal is a mini-quest. Finish it to unlock the insight and get a “Go to Track” jump back into the player.</div>
         </div>
-        <div class="pill">9 gates</div>
+        <div class="pill">9 signals</div>
       </div>
 
       <div class="panel">
@@ -373,7 +371,7 @@
           <div class="insightsGrid" id="insights">
             <article class="insight" data-insight="1" data-track="">
               <div class="label">First Insight</div>
-              <div class="iname">The Awakening Gate</div>
+              <div class="iname">The Awakening Signal</div>
               <div class="ibody">A wider awakening is rising. You’re not late — you’re on time.</div>
               <div class="quest"><b>Mini-Quest:</b> Align three sparks into a triangle.</div>
               <div class="connect">🎵 Track Connection: Intro / Awakening Theme</div>
@@ -381,7 +379,7 @@
 
             <article class="insight" data-insight="2" data-track="">
               <div class="label">Second Insight</div>
-              <div class="iname">The Worldview Gate</div>
+              <div class="iname">The Worldview Signal</div>
               <div class="ibody">Old maps break. A larger view appears.</div>
               <div class="quest"><b>Mini-Quest:</b> Rebuild the lens by rotating fragments.</div>
               <div class="connect">🎵 Track Connection: Worldview Shift</div>
@@ -389,7 +387,7 @@
 
             <article class="insight" data-insight="3" data-track="t01_energy_game">
               <div class="label">Third Insight</div>
-              <div class="iname">The Energy Field Gate</div>
+              <div class="iname">The Energy Field Signal</div>
               <div class="ibody">Reality is not dead matter — it’s living field.</div>
               <div class="quest"><b>Mini-Quest:</b> Tune frequency until the aura stabilizes.</div>
               <div class="connect">🎵 Track Connection: Energy Game</div>
@@ -397,7 +395,7 @@
 
             <article class="insight" data-insight="4" data-track="t01_energy_game">
               <div class="label">Fourth Insight</div>
-              <div class="iname">The Control Pattern Gate</div>
+              <div class="iname">The Control Pattern Signal</div>
               <div class="ibody">When the source feels distant, people try to steal charge from others.</div>
               <div class="quest"><b>Mini-Quest:</b> Break the pattern before it drains you.</div>
               <div class="connect">🎵 Track Connection: Energy Game</div>
@@ -405,7 +403,7 @@
 
             <article class="insight" data-insight="5" data-track="t04_green_battery">
               <div class="label">Fifth Insight</div>
-              <div class="iname">The Inner Connection Gate</div>
+              <div class="iname">The Inner Connection Signal</div>
               <div class="ibody">Power returns when you reconnect inside.</div>
               <div class="quest"><b>Mini-Quest:</b> Hold to ignite a green ember.</div>
               <div class="connect">🎵 Track Connection: Green Battery</div>
@@ -413,7 +411,7 @@
 
             <article class="insight" data-insight="6" data-track="t03_receipts_ropes">
               <div class="label">Sixth Insight</div>
-              <div class="iname">The Clearing Gate</div>
+              <div class="iname">The Clearing Signal</div>
               <div class="ibody">Old cords keep the field heavy. Cut clean.</div>
               <div class="quest"><b>Mini-Quest:</b> Swipe to sever ropes.</div>
               <div class="connect">🎵 Track Connection: Receipts &amp; Ropes</div>
@@ -421,7 +419,7 @@
 
             <article class="insight" data-insight="7" data-track="t05_focus_fire">
               <div class="label">Seventh Insight</div>
-              <div class="iname">The Synchronicity Gate</div>
+              <div class="iname">The Synchronicity Signal</div>
               <div class="ibody">Intent makes the path light itself.</div>
               <div class="quest"><b>Mini-Quest:</b> Follow signs slowly — don’t chase.</div>
               <div class="connect">🎵 Track Connection: Focus = Fire</div>
@@ -429,7 +427,7 @@
 
             <article class="insight" data-insight="8" data-track="t07_co_creator">
               <div class="label">Eighth Insight</div>
-              <div class="iname">The Uplift Gate</div>
+              <div class="iname">The Uplift Signal</div>
               <div class="ibody">Lifting others increases your own field clarity.</div>
               <div class="quest"><b>Mini-Quest:</b> Choose a message that brightens a stranger.</div>
               <div class="connect">🎵 Track Connection: The Co‑Creator</div>
@@ -437,7 +435,7 @@
 
             <article class="insight" data-insight="9" data-track="t07_co_creator">
               <div class="label">Ninth Insight</div>
-              <div class="iname">The Co‑Creation Gate</div>
+              <div class="iname">The Co‑Creation Signal</div>
               <div class="ibody">The future is built by synchronized hearts and disciplined attention.</div>
               <div class="quest"><b>Mini-Quest:</b> Assemble the future glyph.</div>
               <div class="connect">🎵 Track Connection: The Co‑Creator (Finale)</div>
@@ -466,13 +464,13 @@
       <div id="questStage" class="quest-stage" aria-label="Mini-quest interaction area"></div>
       <div id="questStatus" class="quest-status" role="status" aria-live="polite"></div>
       <div class="quest-actions">
-        <button class="btn" id="questReset" type="button" style="display:none" title="Reset this gate">Reset Gate</button>
+        <button class="btn" id="questReset" type="button" style="display:none" title="Reset this challenge">Reset</button>
         <button class="btn" id="questComplete" type="button">Complete Quest</button>
         <button class="btn primary" id="questGo" type="button" style="display:none">Go to Track</button>
       </div>
     </div>
   </div>
 
-  <script src="./adventure.js"></script>
+  <script src="./adventure.js?v=20260204-05"></script>
 </body>
 </html>

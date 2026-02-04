@@ -3,11 +3,15 @@
    - Runtime caching for small assets
 */
 
-const CACHE_VERSION = "2026-02-04";
+const CACHE_VERSION = (() => {
+  try { return new URL(self.location).searchParams.get("v") || "2026-02-04"; }
+  catch { return "2026-02-04"; }
+})();
 const CACHE_NAME = `echoverse-vday-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
   "./",
+  "./landing.html",
   "./index.html",
   "./adventure.html",
   "./offline.html",
@@ -58,7 +62,7 @@ async function cachePutSafe(cache, request, response) {
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-store" });
     await cachePutSafe(cache, request, response);
     return response;
   } catch {
@@ -95,6 +99,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Always try network first for critical app logic so updates land quickly.
+  const critical =
+    url.pathname.endsWith("/pwa.js") ||
+    url.pathname.endsWith("/styles.css") ||
+    url.pathname.endsWith("/adventure.js") ||
+    url.pathname.endsWith("/album.json") ||
+    url.pathname.endsWith("/manifest.webmanifest");
+  if (critical) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
   if (request.mode === "navigate") {
     event.respondWith(networkFirst(request));
     return;
@@ -113,4 +129,3 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(staleWhileRevalidate(request));
   }
 });
-

@@ -8,6 +8,34 @@
 (function(){
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const defer = (fn) => {
+    try {
+      if (typeof queueMicrotask === "function") return queueMicrotask(fn);
+      return setTimeout(fn, 0);
+    } catch {
+      return setTimeout(fn, 0);
+    }
+  };
+
+  // ---- Embed mode (opened inside the player overlay) ----
+  const params = (() => {
+    try { return new URLSearchParams(window.location.search || ""); }
+    catch { return new URLSearchParams(); }
+  })();
+  const isEmbed = params.has("embed") || (() => {
+    try { return window.self !== window.top; }
+    catch { return true; }
+  })();
+
+  function postToParent(message){
+    if (!isEmbed) return false;
+    try {
+      window.parent.postMessage(message, window.location.origin);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   // ---- Theme (shared with player) ----
   let theme = localStorage.getItem("ev_theme") || "anti";
@@ -21,10 +49,41 @@
   setTheme(theme);
   $("#themeBtn")?.addEventListener("click", ()=> setTheme(theme === "anti" ? "love" : "anti"));
 
+  // In embed mode, don't navigate away from the player; ask parent to close.
+  $("#playerLink")?.addEventListener("click", (e)=>{
+    if (!isEmbed) return;
+    e.preventDefault();
+    postToParent({ type: "ev:close_adventure" });
+  });
+
   // ---- Energy System ----
   const energy = { give: 0, take: 0, suck: 0, share: 0 };
   const meterText = $("#meterText");
   const meterFill = $("#meterFill");
+
+  function emitEnergyBurst(type, sourceEl){
+    try {
+      const r = sourceEl?.getBoundingClientRect?.();
+      const x = r ? (r.left + r.width / 2) : (window.innerWidth / 2);
+      const y = r ? (r.top + r.height / 2) : (window.innerHeight * 0.25);
+      window.dispatchEvent(new CustomEvent("ev:energy", { detail: { type, x, y } }));
+    } catch {
+      // ignore
+    }
+  }
+
+  function bounceBtn(btn){
+    try{
+      btn.animate([
+        { transform: "scale(1)" },
+        { transform: "scale(0.96)" },
+        { transform: "scale(1.03)" },
+        { transform: "scale(1)" }
+      ], { duration: 260, easing: "cubic-bezier(.2,.9,.2,1)" });
+    } catch {
+      // ignore
+    }
+  }
 
   function renderEnergy(){
     if (meterText) meterText.textContent =
@@ -41,51 +100,19 @@
       if (!type || energy[type] === undefined) return;
       energy[type] += 1;
       renderEnergy();
+      bounceBtn(btn);
+      emitEnergyBurst(type, btn);
     });
   });
   renderEnergy();
 
-  // ---- Local messages (local-only) ----
-  const MSG_KEY = "ev_adventure_msgs_v1";
-  const msgList = $("#msgList");
-  const msgInput = $("#msgInput");
-
-  function getMsgs(){
-    try { return JSON.parse(localStorage.getItem(MSG_KEY) || "[]"); }
-    catch { return []; }
-  }
-  function setMsgs(arr){
-    localStorage.setItem(MSG_KEY, JSON.stringify(arr.slice(0, 50)));
-  }
-  function renderMsgs(){
-    if (!msgList) return;
-    const msgs = getMsgs();
-    if (!msgs.length){
-      msgList.innerHTML = `<div class="small">No messages yet. Drop a synchronicity.</div>`;
-      return;
-    }
-    msgList.innerHTML = msgs.map(m => `<div class="small" style="margin-bottom:8px">• ${escapeHtml(m)}</div>`).join("");
-  }
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-  }
-  $("#msgAdd")?.addEventListener("click", ()=>{
-    const v = (msgInput?.value || "").trim();
-    if (!v) return;
-    const msgs = getMsgs();
-    msgs.unshift(v);
-    setMsgs(msgs);
-    if (msgInput) msgInput.value = "";
-    renderMsgs();
-  });
-  $("#msgClear")?.addEventListener("click", ()=>{
-    localStorage.removeItem(MSG_KEY);
-    renderMsgs();
-  });
-  msgInput?.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter") $("#msgAdd")?.click();
-  });
-  renderMsgs();
+  // Micro-interactions: a subtle bounce on other buttons too.
+  document.addEventListener("click", (e)=>{
+    const btn = e.target?.closest?.(".btn");
+    if (!btn) return;
+    if (btn.hasAttribute("data-energy")) return;
+    bounceBtn(btn);
+  }, { passive: true });
 
   // ---- Quest Modal ----
   const PROG_KEY = "echoverseProgress";
@@ -203,7 +230,7 @@
     function completeGate1(){
       if (puzzle.classList.contains("g1-solved")) return;
       puzzle.classList.add("g1-solved");
-      setStatus("Triangle aligned. Gate opened.");
+      setStatus("Triangle aligned. Signal unlocked.");
       setCompleteEnabled(true);
 
       // auto-complete after a short delay
@@ -211,6 +238,7 @@
         if (!activeInsight) return;
         activeInsight.classList.add("unlocked");
         saveProgress();
+        emitInsightUnlocked(activeInsight.dataset.insight || "1");
         closeModal();
       }, 650);
     }
@@ -360,7 +388,7 @@ function buildTriangleQuest(){
     function checkDone(){
       const ok = sparks.every(s => s.dataset.placed !== "");
       if (ok){
-        setStatus("Triangle aligned. Gate opened.");
+        setStatus("Triangle aligned. Signal unlocked.");
         setCompleteEnabled(true);
       } else {
         setStatus("Place all three sparks.");
@@ -646,18 +674,31 @@ function buildTriangleQuest(){
     const btn=$("#holdBtn", qStage);
     const pct=$("#pct", qStage);
     const fill=$("#fill", qStage);
-    let holding=false, val=0, raf=0, last=0;
+    let holding=false, val=0, raf=0, last=0, complete=false;
 
     function step(ts){
       if (!last) last=ts;
       const dt=(ts-last)/1000; last=ts;
-      if (holding) val = Math.min(1, val + dt/1.4);
-      else val = 0;
+      if (complete) {
+        val = 1;
+      } else if (holding) {
+        val = Math.min(1, val + dt/1.4);
+      } else {
+        val = 0;
+      }
       const p=Math.round(val*100);
       if (pct) pct.textContent=String(p);
       if (fill) fill.style.width = p+"%";
       if (p>=100){
-        setStatus("Fully charged. You generate clean energy.");
+        complete = true;
+        holding = false;
+        btn.classList.remove("active");
+        btn.disabled = true;
+        btn.textContent = "Charged";
+        setStatus("Fully charged. You generate clean energy. Tap Complete to unlock.");
+        setCompleteEnabled(true);
+      } else if (complete){
+        setStatus("Fully charged. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
         setStatus(holding ? "Charging…" : "Press and hold to charge.");
@@ -681,7 +722,7 @@ function buildTriangleQuest(){
     btn.addEventListener("pointerleave", ()=>{ if (holding) stop(); });
 
     raf=requestAnimationFrame(step);
-    setStatus("Press and hold to charge.");
+    setStatus("Press and hold to charge. Once full, you can release and tap Complete.");
     setCompleteEnabled(false);
 
     return ()=>{ if (raf) cancelAnimationFrame(raf); };
@@ -702,7 +743,7 @@ function buildTriangleQuest(){
     const c=$("#ringCanvas", qStage);
     const ctx=c.getContext("2d");
 
-    let armed=false, inside=false, hold=0, raf=0, last=0;
+    let armed=false, inside=false, hold=0, raf=0, last=0, complete=false;
     let ring={x:0,y:0,r:60};
 
     function size(){
@@ -744,12 +785,18 @@ function buildTriangleQuest(){
     function step(ts){
       if (!last) last=ts;
       const dt=(ts-last)/1000; last=ts;
-      if (armed && inside) hold = Math.min(3, hold+dt);
-      else hold = Math.max(0, hold-dt*1.2);
+      if (complete) {
+        hold = 3;
+      } else if (armed && inside) {
+        hold = Math.min(3, hold+dt);
+      } else {
+        hold = Math.max(0, hold-dt*1.2);
+      }
       if (secEl) secEl.textContent = hold.toFixed(1);
 
       if (hold>=3){
-        setStatus("Focus achieved. Fire becomes direction.");
+        complete = true;
+        setStatus("Focus achieved. Fire becomes direction. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
         setStatus(!armed ? "Ignite first." : (inside ? "Hold focus…" : "Stay inside the ring."));
@@ -789,17 +836,24 @@ function buildTriangleQuest(){
     const still=$("#still", qStage);
     const fill=$("#fill", qStage);
 
-    let holding=false, t=0, raf=0, last=0;
+    let holding=false, t=0, raf=0, last=0, complete=false;
     let startX=0,startY=0;
     function step(ts){
       if (!last) last=ts;
       const dt=(ts-last)/1000; last=ts;
-      if (holding) t = Math.min(2, t+dt);
-      else t = Math.max(0, t-dt*1.3);
+      if (complete) {
+        t = 2;
+      } else if (holding) {
+        t = Math.min(2, t+dt);
+      } else {
+        t = Math.max(0, t-dt*1.3);
+      }
       if (still) still.textContent=t.toFixed(1);
       if (fill) fill.style.width = Math.round((t/2)*100)+"%";
       if (t>=2){
-        setStatus("Observer mode unlocked. You notice the pattern.");
+        complete = true;
+        holding = false;
+        setStatus("Observer mode unlocked. You notice the pattern. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
         setStatus(holding ? "Hold still…" : "Press and hold.");
@@ -808,13 +862,14 @@ function buildTriangleQuest(){
       raf=requestAnimationFrame(step);
     }
     function down(e){
+      if (complete) return;
       holding=true; t=0;
       startX=e.clientX; startY=e.clientY;
       btn.setPointerCapture?.(e.pointerId);
       e.preventDefault();
     }
     function move(e){
-      if (!holding) return;
+      if (!holding || complete) return;
       const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
       if (dx>22 || dy>22){ holding=false; t=0; }
     }
@@ -892,17 +947,26 @@ function buildTriangleQuest(){
       });
     });
 
-    let holding=false, val=0, raf=0, last=0;
+    let holding=false, val=0, raf=0, last=0, complete=false;
     function step(ts){
       if (!last) last=ts;
       const dt=(ts-last)/1000; last=ts;
-      if (holding) val = Math.min(1, val + dt/1.0);
-      else val = Math.max(0, val - dt*1.8);
+      if (complete) {
+        val = 1;
+      } else if (holding) {
+        val = Math.min(1, val + dt/1.0);
+      } else {
+        val = Math.max(0, val - dt*1.8);
+      }
       const p=Math.round(val*100);
       if (pct) pct.textContent=String(p);
       if (fill) fill.style.width=p+"%";
       if (p>=100){
-        setStatus("Intention sealed. Walk in alignment.");
+        complete = true;
+        holding = false;
+        seal.disabled = true;
+        seal.textContent = "Sealed";
+        setStatus("Intention sealed. Walk in alignment. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
         if (!chosen) setStatus("Pick an intention.");
@@ -984,7 +1048,7 @@ function buildTriangleQuest(){
     clearStage();
     const unlocked = activeInsight?.classList.contains("unlocked");
     if (unlocked){
-      setStatus("Already completed. You can reset this gate if you want to replay it.");
+      setStatus("Already completed. You can reset this Signal if you want to replay it.");
       setCompleteEnabled(true);
       if (qReset) qReset.style.display = "inline-flex";
       return;
@@ -1009,6 +1073,26 @@ function buildTriangleQuest(){
     const unlocked = $$(".insight.unlocked").map(card => card.dataset.insight);
     localStorage.setItem(PROG_KEY, JSON.stringify(unlocked));
   }
+  function emitProgressUpdate(){
+    try{
+      const unlocked = $$(".insight.unlocked")
+        .map(card => String(card.dataset.insight || ""))
+        .filter(Boolean);
+      window.dispatchEvent(new CustomEvent("ev:progress", { detail: { unlocked } }));
+      const pill = document.getElementById("constellationPill");
+      if (pill) pill.textContent = `Constellation: ${unlocked.length}/9`;
+    } catch {
+      // ignore
+    }
+  }
+  function emitInsightUnlocked(insightId){
+    emitProgressUpdate();
+    try{
+      window.dispatchEvent(new CustomEvent("ev:insightUnlocked", { detail: { id: String(insightId) } }));
+    } catch {
+      // ignore
+    }
+  }
   function loadProgress(){
     const unlocked = JSON.parse(localStorage.getItem(PROG_KEY) || "[]");
     unlocked.forEach(id=>{
@@ -1018,6 +1102,8 @@ function buildTriangleQuest(){
   }
 
   loadProgress();
+  // Defer so the skyfield module has time to attach listeners.
+  defer(emitProgressUpdate);
 
   $$(".insight").forEach(card=>{
     card.tabIndex = 0;
@@ -1064,9 +1150,15 @@ function buildTriangleQuest(){
   qComplete?.addEventListener("click", ()=>{
     if (qComplete?.disabled) return;
     if (activeInsight){
-      activeInsight.classList.add("unlocked");
-      saveProgress();
-      setStatus("Completed.");
+      const wasUnlocked = activeInsight.classList.contains("unlocked");
+      if (!wasUnlocked){
+        activeInsight.classList.add("unlocked");
+        saveProgress();
+        emitInsightUnlocked(activeInsight.dataset.insight || "");
+      } else {
+        emitProgressUpdate();
+      }
+      setStatus(wasUnlocked ? "Already completed." : "Completed.");
       setCompleteEnabled(true);
     }
     closeModal();
@@ -1077,6 +1169,7 @@ function buildTriangleQuest(){
     if (!activeInsight) return;
     activeInsight.classList.remove("unlocked");
     saveProgress();
+    emitProgressUpdate();
     // Rebuild the quest interaction immediately
     requestAnimationFrame(()=> setupQuest(activeInsight.dataset.insight));
   });
@@ -1084,43 +1177,87 @@ function buildTriangleQuest(){
   qGo?.addEventListener("click", ()=>{
     const trackId = qGo.dataset.track || "";
     if (trackId) localStorage.setItem("ev_track", trackId);
+    closeModal();
+    if (postToParent({ type: "ev:go_to_track", trackId })) return;
     window.location.href = "./index.html";
   });
 
   // Reset all progress
   $("#resetAll")?.addEventListener("click", ()=>{
-    if (!confirm("Reset all gate progress?")) return;
+    if (!confirm("Reset all progress?")) return;
     localStorage.removeItem(PROG_KEY);
     $$(".insight.unlocked").forEach(el=>el.classList.remove("unlocked"));
+    emitProgressUpdate();
   });
 })();
 
 
 
 /* =========================================================
-   EV_SKYFIELD — Canvas Starfield + Constellation Sketch
-   - Lightweight: no deps, pointer-events none on canvas
-   - Click near stars to "link" them; double-click clears
-   - Subtle twinkle + parallax on mouse move
+   EV_SKYFIELD — Persistent Starfield + Progress Constellation
+   - Persistent stars: visible, pulsing, slow drift, star-shapes
+   - Progress pattern: unlocked insights form a ring constellation
+   - Energy actions: “Give/Take/Suck/Share” spawn color bursts
+   - Celebrations: unlocking an insight triggers a bigger burst
 ========================================================= */
 (function(){
   const SKY_TAG = "EV_SKYFIELD";
-  // guard (in case bundled twice)
   if (window[SKY_TAG]) return;
   window[SKY_TAG] = true;
 
+  const TOTAL_INSIGHTS = 9;
+  const PROG_KEY = "echoverseProgress";
+
+  const ENERGY_PRESETS = {
+    give:  { hue: 200, sat: 95, light: 70 },
+    take:  { hue: 45,  sat: 95, light: 72 },
+    suck:  { hue: 262, sat: 72, light: 56 },
+    share: { hue: 305, sat: 95, light: 72 }
+  };
+
   function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function rand(min,max){ return min + Math.random()*(max-min); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+  function easeOutBack(t){
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3*Math.pow(t-1,3) + c1*Math.pow(t-1,2);
+  }
 
   function init(){
     const canvas = document.getElementById("sky");
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha:true });
 
+    const reducedMotion = (() => {
+      try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+      catch { return false; }
+    })();
+
     let w=0,h=0,dpr=1;
-    let stars=[];
-    let links=[]; // indices of selected stars
-    let mouse = {x:0,y:0, tx:0, ty:0, has:false};
-    let t0 = performance.now();
+    let bgStars=[];
+    let particles=[];
+    let shockwaves=[];
+    let unlocked = new Set();
+    const unlockAt = new Map(); // id -> timestamp
+
+    const mouse = { x: 0, y: 0, has: false };
+    let lastNow = performance.now();
+    let t0 = lastNow;
+
+    function setUnlocked(list){
+      unlocked = new Set((list || []).map(v => String(v)));
+    }
+
+    function readProgress(){
+      try{
+        const list = JSON.parse(localStorage.getItem(PROG_KEY) || "[]");
+        if (Array.isArray(list)) setUnlocked(list);
+      } catch {
+        // ignore
+      }
+    }
 
     function resize(){
       dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -1134,125 +1271,339 @@ function buildTriangleQuest(){
       buildStars();
     }
 
-    function rand(min,max){ return min + Math.random()*(max-min); }
-
     function buildStars(){
       const area = w*h;
-      const count = clamp(Math.round(area/18000), 60, 160);
-      stars = [];
+      const count = clamp(Math.round(area/14500), 90, 220);
+      bgStars = [];
       for(let i=0;i<count;i++){
-        const r = rand(0.8, 1.9);
-        const b = rand(0.55, 1.0); // brightness
-        const hue = rand(190, 320); // cyan->magenta range
-        stars.push({
+        const r = rand(0.8, 2.2);
+        const b = rand(0.55, 1.0);
+        const hue = rand(190, 320);
+        const depth = rand(0.35, 1.0);
+        const speed = lerp(2.2, 8.5, depth) * 0.22; // slow drift (px/s)
+        const isStarShape = Math.random() < (r > 1.4 ? 0.8 : 0.38);
+        bgStars.push({
           x: rand(0,w),
           y: rand(0,h),
           r,
           b,
-          tw: rand(0.6, 1.4),
+          tw: rand(0.35, 1.25),
           ph: rand(0, Math.PI*2),
-          hue
+          hue,
+          depth,
+          vx: rand(-speed, speed),
+          vy: rand(-speed, speed),
+          rot: rand(0, Math.PI*2),
+          vr: rand(-0.18, 0.18) * 0.18,
+          star: isStarShape
         });
       }
-      // reset links if they point out of range
-      links = links.filter(idx => idx>=0 && idx<stars.length);
     }
 
-    function drawBackground(){
-      // very soft vignette
+    function getPattern(){
+      const minDim = Math.min(w, h);
+      const cx = w * 0.5;
+      const cy = clamp(h * 0.32, 120, 230);
+      const ringR = clamp(minDim * 0.17, 70, 160);
+      return { cx, cy, ringR };
+    }
+
+    function insightPos(id, tt){
+      const { cx, cy, ringR } = getPattern();
+      const a0 = -Math.PI/2;
+      const ang = a0 + (id - 1) * (Math.PI * 2 / TOTAL_INSIGHTS);
+      const breathe = 1 + 0.028*Math.sin(tt*0.9);
+      return {
+        x: cx + Math.cos(ang) * ringR * breathe,
+        y: cy + Math.sin(ang) * ringR * breathe,
+        ang
+      };
+    }
+
+    function drawStarShape(x, y, rOuter, hue, alpha, rotation){
+      const points = 5;
+      const rInner = rOuter * 0.5;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      for(let i=0;i<points*2;i++){
+        const r = (i % 2 === 0) ? rOuter : rInner;
+        const a = (i * Math.PI) / points;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = `hsla(${hue}, 96%, 72%, ${alpha})`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBackground(tt){
       ctx.clearRect(0,0,w,h);
-      const g = ctx.createRadialGradient(w*0.5,h*0.35, 0, w*0.5,h*0.55, Math.max(w,h)*0.75);
-      g.addColorStop(0, "rgba(255,255,255,0.03)");
-      g.addColorStop(1, "rgba(0,0,0,0)");
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0, "rgba(8, 10, 18, 0.92)");
+      g.addColorStop(0.45, "rgba(6, 6, 18, 0.85)");
+      g.addColorStop(1, "rgba(0, 0, 0, 0.92)");
       ctx.fillStyle = g;
+      ctx.fillRect(0,0,w,h);
+
+      const v = ctx.createRadialGradient(w*0.5, h*0.35, 0, w*0.5, h*0.6, Math.max(w,h)*0.8);
+      v.addColorStop(0, "rgba(255,255,255,0.035)");
+      v.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = v;
       ctx.fillRect(0,0,w,h);
     }
 
-    function drawStars(now){
-      const tt = (now - t0)/1000;
-      const px = mouse.has ? (mouse.x - w/2)*0.015 : 0;
-      const py = mouse.has ? (mouse.y - h/2)*0.015 : 0;
+    function updateAndDrawStars(tt, dt){
+      const px = mouse.has ? (mouse.x - w/2) * 0.02 : 0;
+      const py = mouse.has ? (mouse.y - h/2) * 0.02 : 0;
+      const margin = 30;
 
-      for(let i=0;i<stars.length;i++){
-        const s = stars[i];
-        const tw = 0.75 + 0.25*Math.sin(tt*s.tw + s.ph);
-        const alpha = clamp(s.b*tw, 0.15, 1);
-        const x = s.x + px*(0.6 + s.r*0.25);
-        const y = s.y + py*(0.6 + s.r*0.25);
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${s.hue}, 95%, 70%, ${alpha*0.65})`;
-        ctx.arc(x, y, s.r*1.3, 0, Math.PI*2);
-        ctx.fill();
+      for(const s of bgStars){
+        if (!reducedMotion){
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.rot += s.vr * dt;
+          if (s.x < -margin) s.x = w + margin;
+          if (s.x > w + margin) s.x = -margin;
+          if (s.y < -margin) s.y = h + margin;
+          if (s.y > h + margin) s.y = -margin;
+        }
 
-        // tiny glow
+        const tw = 0.72 + 0.28*Math.sin(tt*s.tw + s.ph);
+        const alpha = clamp(s.b * tw, 0.14, 1);
+        const x = s.x + px * s.depth;
+        const y = s.y + py * s.depth;
+        const r = s.r * (0.92 + 0.18*tw);
+
+        if (s.star){
+          drawStarShape(x, y, r*1.55, s.hue, alpha*0.52, s.rot);
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = `hsla(${s.hue}, 95%, 72%, ${alpha*0.50})`;
+          ctx.arc(x, y, r*1.15, 0, Math.PI*2);
+          ctx.fill();
+        }
+
         ctx.beginPath();
-        ctx.fillStyle = `hsla(${s.hue}, 95%, 75%, ${alpha*0.12})`;
-        ctx.arc(x, y, s.r*4.2, 0, Math.PI*2);
+        ctx.fillStyle = `hsla(${s.hue}, 95%, 75%, ${alpha*0.10})`;
+        ctx.arc(x, y, r*5.2, 0, Math.PI*2);
         ctx.fill();
       }
     }
 
-    function drawConstellation(now){
-      if (!links.length) return;
-      const tt = (now - t0)/1000;
-      const pulse = 0.65 + 0.35*Math.sin(tt*2.2);
-      ctx.lineWidth = 1.25;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = `rgba(255,255,255,${0.18*pulse})`;
+    function drawProgressConstellation(tt){
+      const { cx, cy, ringR } = getPattern();
+      const ringPulse = 0.65 + 0.35*Math.sin(tt*1.6);
+
+      // Center star + aura
+      drawStarShape(cx, cy, 4.6 + 0.35*Math.sin(tt*2.1), 260, 0.45 + 0.10*ringPulse, tt*0.4);
       ctx.beginPath();
-      for(let i=0;i<links.length;i++){
-        const a = stars[links[i]];
-        if (!a) continue;
-        const x = a.x, y = a.y;
-        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      }
+      ctx.fillStyle = `rgba(255,255,255,${0.10 + 0.05*ringPulse})`;
+      ctx.arc(cx, cy, 18 + 2.5*ringPulse, 0, Math.PI*2);
+      ctx.fill();
+
+      // Ring guide
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(255,255,255,${0.06 + 0.02*ringPulse})`;
+      ctx.lineWidth = 1;
+      ctx.arc(cx, cy, ringR, 0, Math.PI*2);
       ctx.stroke();
 
-      // highlight nodes
-      for(const idx of links){
-        const s = stars[idx];
-        if(!s) continue;
+      const positions = [];
+      for(let i=1;i<=TOTAL_INSIGHTS;i++){
+        positions[i] = insightPos(i, tt);
+      }
+
+      // Center spokes (unlocked only)
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      for(let i=1;i<=TOTAL_INSIGHTS;i++){
+        if (!unlocked.has(String(i))) continue;
+        const p = positions[i];
+        const hue = 195 + (i-1) * (130/(TOTAL_INSIGHTS-1));
+        const a = 0.10 + 0.08*ringPulse;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${0.35*pulse})`;
-        ctx.arc(s.x, s.y, Math.max(2.2, s.r*1.6), 0, Math.PI*2);
+        ctx.strokeStyle = `hsla(${hue}, 95%, 74%, ${a})`;
+        ctx.lineWidth = 1.15;
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+
+      // Ring segments (only where both ends unlocked)
+      for(let i=1;i<=TOTAL_INSIGHTS;i++){
+        const j = (i % TOTAL_INSIGHTS) + 1;
+        if (!unlocked.has(String(i)) || !unlocked.has(String(j))) continue;
+        const a = 0.08 + 0.07*ringPulse;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(255,255,255,${a})`;
+        ctx.lineWidth = 1.1;
+        ctx.moveTo(positions[i].x, positions[i].y);
+        ctx.lineTo(positions[j].x, positions[j].y);
+        ctx.stroke();
+      }
+
+      // Stars
+      for(let i=1;i<=TOTAL_INSIGHTS;i++){
+        const id = String(i);
+        const p = positions[i];
+        const isUnlocked = unlocked.has(id);
+        const hue = 195 + (i-1) * (130/(TOTAL_INSIGHTS-1));
+        const baseA = isUnlocked ? (0.62 + 0.14*ringPulse) : (0.02 + 0.01*ringPulse);
+        const baseR = isUnlocked ? 4.1 : 1.4;
+
+        let pop = 1;
+        const unlockedAt = unlockAt.get(id);
+        if (unlockedAt){
+          const s = clamp((performance.now() - unlockedAt) / 900, 0, 1);
+          pop = 1 + 0.25 * easeOutBack(s);
+          if (s >= 1) unlockAt.delete(id);
+        }
+
+        drawStarShape(p.x, p.y, baseR*pop, hue, baseA, tt*0.5 + p.ang*0.5);
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${hue}, 95%, 75%, ${baseA*0.10})`;
+        ctx.arc(p.x, p.y, (baseR*pop)*7.0, 0, Math.PI*2);
         ctx.fill();
+      }
+    }
+
+    function spawnShockwave(x, y, hue, sat, light){
+      shockwaves.push({
+        x, y,
+        r: 0,
+        life: 0,
+        max: rand(720, 980),
+        hue, sat, light
+      });
+      if (shockwaves.length > 14) shockwaves.shift();
+    }
+
+    function spawnBurst(x, y, preset, scale=1){
+      const p = preset || { hue: 260, sat: 90, light: 70 };
+      const count = Math.round(rand(16, 24) * scale);
+      for(let i=0;i<count;i++){
+        const a = rand(0, Math.PI*2);
+        const sp = rand(32, 130) * (0.45 + 0.55*scale);
+        const vx = Math.cos(a) * sp;
+        const vy = Math.sin(a) * sp;
+        particles.push({
+          x, y,
+          vx, vy,
+          drag: rand(0.985, 0.994),
+          hue: p.hue + rand(-10, 10),
+          sat: p.sat,
+          light: p.light + rand(-6, 6),
+          life: 0,
+          max: rand(1400, 2300) * (0.9 + 0.35*scale),
+          r: rand(1.1, 2.6) * (0.8 + 0.4*scale)
+        });
+      }
+      if (particles.length > 240) particles.splice(0, particles.length - 240);
+    }
+
+    function spawnCelebrateInsight(id){
+      const i = clamp(Number(id) || 1, 1, TOTAL_INSIGHTS);
+      const tt = (performance.now() - t0)/1000;
+      const pos = insightPos(i, tt);
+      const hue = 195 + (i-1) * (130/(TOTAL_INSIGHTS-1));
+      unlockAt.set(String(i), performance.now());
+      spawnBurst(pos.x, pos.y, { hue, sat: 95, light: 74 }, 2.05);
+      spawnShockwave(pos.x, pos.y, hue, 95, 74);
+    }
+
+    function updateParticles(dt){
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.life += dt * 1000;
+        if (p.life >= p.max){ particles.splice(i,1); continue; }
+        p.vx *= p.drag;
+        p.vy *= p.drag;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+      }
+      for(let i=shockwaves.length-1;i>=0;i--){
+        const s = shockwaves[i];
+        s.life += dt * 1000;
+        if (s.life >= s.max){ shockwaves.splice(i,1); continue; }
+        s.r = lerp(0, clamp(Math.min(w,h)*0.22, 90, 170), easeOutCubic(s.life / s.max));
+      }
+    }
+
+    function drawParticleConnections(){
+      if (particles.length < 2) return;
+      const maxD = 92;
+      const maxD2 = maxD*maxD;
+      ctx.lineWidth = 1.0;
+      for(let i=0;i<particles.length;i++){
+        const a = particles[i];
+        const aLife = 1 - a.life / a.max;
+        if (aLife < 0.15) continue;
+        for(let j=i+1;j<particles.length;j++){
+          const b = particles[j];
+          const bLife = 1 - b.life / b.max;
+          if (bLife < 0.15) continue;
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const d2 = dx*dx + dy*dy;
+          if (d2 > maxD2) continue;
+          const d = Math.sqrt(d2);
+          const t = 1 - d / maxD;
+          const op = t * 0.22 * Math.min(aLife, bLife);
+          if (op < 0.008) continue;
+          const hue = (a.hue + b.hue) / 2;
+          ctx.strokeStyle = `hsla(${hue}, 92%, 74%, ${op})`;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawParticles(){
+      for(const p of particles){
+        const life = 1 - p.life / p.max;
+        const alpha = clamp(life, 0, 1);
+        const r = p.r * (0.88 + 0.12*Math.sin((p.life/1000)*6));
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, ${p.sat}%, ${p.light}%, ${alpha*0.75})`;
+        ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, ${p.sat}%, ${Math.min(92, p.light+12)}%, ${alpha*0.10})`;
+        ctx.arc(p.x, p.y, r*6.0, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      for(const s of shockwaves){
+        const k = 1 - s.life / s.max;
+        const a = clamp(k, 0, 1);
+        ctx.beginPath();
+        ctx.strokeStyle = `hsla(${s.hue}, ${s.sat}%, ${s.light}%, ${a*0.22})`;
+        ctx.lineWidth = 1.5;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.stroke();
       }
     }
 
     function render(now){
-      drawBackground();
-      drawStars(now);
-      drawConstellation(now);
+      const tt = (now - t0)/1000;
+      const dt = clamp((now - lastNow) / 1000, 0, 0.05);
+      lastNow = now;
+
+      drawBackground(tt);
+      updateAndDrawStars(tt, dt);
+      drawProgressConstellation(tt);
+      updateParticles(dt);
+      drawParticleConnections();
+      drawParticles();
       requestAnimationFrame(render);
     }
-
-    function nearestStar(x,y, maxDist=28){
-      let best=-1, bestD=maxDist*maxDist;
-      for(let i=0;i<stars.length;i++){
-        const s=stars[i];
-        const dx=s.x-x, dy=s.y-y;
-        const d=dx*dx+dy*dy;
-        if(d<bestD){ best=i; bestD=d; }
-      }
-      return best;
-    }
-
-    // Interactions: click near star to add to links; double click clears
-    function onClick(e){
-      // ignore clicks when modal/drawer open if you want; but safe to allow
-      const x = e.clientX, y = e.clientY;
-      const idx = nearestStar(x,y, 30);
-      if (idx<0) return;
-      if (!links.includes(idx)){
-        links.push(idx);
-        if (links.length>7) links.shift();
-      } else {
-        // clicking an already-linked star removes it
-        links = links.filter(i=>i!==idx);
-      }
-    }
-    function onDbl(e){ links=[]; }
 
     function onMove(e){
       mouse.x = e.clientX;
@@ -1260,16 +1611,39 @@ function buildTriangleQuest(){
       mouse.has = true;
     }
 
-    window.addEventListener("resize", resize, {passive:true});
-    window.addEventListener("mousemove", onMove, {passive:true});
+    // Bridge: Energy actions + progress updates + celebrations
+    window.addEventListener("ev:energy", (e)=>{
+      const d = e?.detail || {};
+      const type = String(d.type || "");
+      const preset = ENERGY_PRESETS[type] || { hue: 260, sat: 92, light: 70 };
+      const x = Number(d.x ?? (w/2));
+      const y = Number(d.y ?? (h*0.25));
+      spawnBurst(x, y, preset, 1.0);
+      spawnShockwave(x, y, preset.hue, preset.sat, preset.light);
+    });
+
+    window.addEventListener("ev:progress", (e)=>{
+      const list = e?.detail?.unlocked;
+      if (Array.isArray(list)) setUnlocked(list);
+    });
+
+    window.addEventListener("ev:insightUnlocked", (e)=>{
+      const id = e?.detail?.id;
+      if (!id) return;
+      unlocked.add(String(id));
+      spawnCelebrateInsight(id);
+    });
+
+    // Boot state
+    readProgress();
+    window.addEventListener("resize", resize, { passive:true });
+    window.addEventListener("mousemove", onMove, { passive:true });
     window.addEventListener("touchmove", (e)=>{
       if (!e.touches || !e.touches[0]) return;
       mouse.x = e.touches[0].clientX;
       mouse.y = e.touches[0].clientY;
       mouse.has = true;
-    }, {passive:true});
-    document.addEventListener("click", onClick, {passive:true});
-    document.addEventListener("dblclick", onDbl, {passive:true});
+    }, { passive:true });
 
     resize();
     requestAnimationFrame(render);

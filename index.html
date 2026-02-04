@@ -12,13 +12,13 @@
   <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-05">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260204-05">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
   <title>EchoVerse • Love Without Cords</title>
@@ -38,7 +38,24 @@
     })();
   </script>
 
-  <script defer src="./pwa.js"></script>
+  <script>
+    (function () {
+      try {
+        if (window.self !== window.top) return;
+        const params = new URLSearchParams(window.location.search || "");
+        if (params.has("skipLanding")) return;
+        const seen = localStorage.getItem("ev_seen_landing_v1");
+        if (seen) return;
+
+        const target = new URL("./landing.html", window.location.href);
+        target.searchParams.set("return", window.location.pathname + window.location.search + window.location.hash);
+        window.location.replace(target.toString());
+      } catch {
+        // ignore
+      }
+    })();
+  </script>
+  <script defer src="./pwa.js?v=20260204-05"></script>
 </head>
 
 <body data-theme="anti">
@@ -46,7 +63,7 @@
     <div class="topbar-inner">
       <div class="brand">
         <div class="kicker">EchoVerse • AeroVista</div>
-        <div class="title">Album Experience Player</div>
+        <div class="title">Love Without Cords</div>
       </div>
       <div class="controls">
         <button class="btn badge primary" id="themeBtn" title="Toggle theme">
@@ -55,8 +72,9 @@
         </button>
         <button class="btn" id="lyricsBtn">Lyrics</button>
         <button class="btn" id="conceptBtn">Concept</button>
-        <button class="btn" id="statsBtn">Stats</button>
-        <a href="./adventure.html" class="btn">Adventure</a>
+        <button class="btn" id="statsBtn">Activity</button>
+        <button class="btn" id="chatBtn">Chat</button>
+        <a href="./adventure.html" class="btn" id="adventureBtn">Adventure</a>
       </div>
     </div>
   </div>
@@ -72,7 +90,7 @@
             <div class="desc" id="albumDesc"></div>
             <div class="desc" id="bootError" style="display:none;color:var(--accent3)"></div>
           </div>
-          <div class="pill" id="albumTag">JSON-driven • GitHub Pages</div>
+          <div class="pill" id="albumTag">Valentine’s Day Drop • Love Without Cords</div>
         </div>
 
         <div class="hero">
@@ -118,25 +136,13 @@
               <h3>Now Playing</h3>
               <div class="big" id="mantra">—</div>
               <p id="soundStyle">—</p>
-              <p class="small" id="tip">Tip: Tap any track to play. Theme toggle changes the whole mood.</p>
+              <p class="small" id="tip">Tap a track to start. Toggle Love/Anti to shift the whole mood.</p>
             </div>
 
             <div class="section" id="galleryView" style="display:none">
-              <h3>Cover Gallery</h3>
-              <p class="small">Quick grid of covers (pulled from album.json).</p>
+              <h3>Cover Art</h3>
+              <p class="small">Tap any cover to open it full size.</p>
               <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="panel">
-            <div class="section">
-              <h3>Estimated Usage</h3>
-              <p class="small">This is a local estimate (based on plays tracked in your browser).</p>
-              <div class="big" id="estGB">0.00 GB</div>
-              <p class="small" id="estNote">Enable Umami to see real “plays” across everyone; this estimate is just your device.</p>
-              <button class="btn" id="resetLocalStats">Reset Local Stats</button>
             </div>
           </div>
         </div>
@@ -176,20 +182,49 @@
   <div class="drawer" id="statsDrawer" aria-hidden="true">
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
       <div class="shd">
-        <div class="ttl" id="statsTitle">Stats</div>
+        <div class="ttl" id="statsTitle">Activity</div>
         <button class="btn" data-close="statsDrawer" type="button">Close</button>
       </div>
       <div class="section">
-        <h3>Umami Events Fired</h3>
-        <p class="small">If Umami is blocked, events won’t land—player still works.</p>
+        <h3>Recent Activity</h3>
+        <p class="small">A lightweight timeline of what you’ve opened and played on this device.</p>
         <pre id="eventLog" class="mono"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer" id="chatDrawer" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle" tabindex="-1">
+      <div class="shd">
+        <div class="ttl" id="chatTitle">Chat Wall</div>
+        <button class="btn" data-close="chatDrawer" type="button">Close</button>
+      </div>
+      <div class="small" style="margin-bottom:10px">A public wall for synchronicities + reflections. Sign in with GitHub to post.</div>
+      <div id="giscusMount" class="giscus-wrap">
+        <div class="small" id="giscusLoading">Loading chat… (requires internet)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer" id="adventureDrawer" aria-hidden="true">
+    <div class="sheet sheet-full" role="dialog" aria-modal="true" aria-labelledby="adventureTitle" tabindex="-1">
+      <div class="shd">
+        <div class="ttl" id="adventureTitle">Adventure</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <a class="btn" href="./adventure.html" target="_blank" rel="noopener">Open in new tab</a>
+          <button class="btn" data-close="adventureDrawer" type="button">Close</button>
+        </div>
+      </div>
+      <div class="small" style="margin-bottom:10px">Music keeps playing while you explore.</div>
+      <div class="sheet-body">
+        <iframe id="adventureFrame" class="embed-frame" title="EchoVerse Adventure" loading="lazy"></iframe>
       </div>
     </div>
   </div>
 
   <div class="footerbar">
     <div class="inner">
-      <div class="small">EchoVerse Player • JSON-driven • GitHub Pages friendly</div>
+      <div class="small">EchoVerse • Love Without Cords • Valentine’s Day Drop</div>
       <div class="kbd mono">Space: Play/Pause · ←/→: Seek 5s · N/P: Next/Prev</div>
     </div>
   </div>
@@ -198,6 +233,119 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
+
+    // --------- Chat (Giscus) ----------
+    const GISCUS_CFG = {
+      repo: "aerovista-us/vday",
+      repoId: "R_kgDOQ9J9iA",
+      category: "Announcements",
+      categoryId: "DIC_kwDOQ9J9iM4C12ge",
+      mapping: "specific",
+      term: "chat-wall",
+      theme: "catppuccin_frappe",
+      lang: "en",
+    };
+    let giscusStatus = "idle"; // idle | loading | loaded | error
+
+    function setGiscusTheme(themeName){
+      const iframe = document.querySelector("iframe.giscus-frame");
+      if (!iframe) return;
+      iframe.contentWindow?.postMessage?.(
+        { giscus: { setConfig: { theme: themeName } } },
+        "https://giscus.app"
+      );
+    }
+
+    function ensureGiscusLoaded(){
+      const mount = $("giscusMount");
+      if (!mount) return;
+      if (giscusStatus === "loading" || giscusStatus === "loaded") return;
+
+      giscusStatus = "loading";
+      mount.innerHTML = `<div class="small" id="giscusLoading">Loading chat… (requires internet)</div>`;
+
+      const s = document.createElement("script");
+      s.src = "https://giscus.app/client.js";
+      s.async = true;
+      s.crossOrigin = "anonymous";
+      s.setAttribute("data-repo", GISCUS_CFG.repo);
+      s.setAttribute("data-repo-id", GISCUS_CFG.repoId);
+      s.setAttribute("data-category", GISCUS_CFG.category);
+      s.setAttribute("data-category-id", GISCUS_CFG.categoryId);
+      s.setAttribute("data-mapping", GISCUS_CFG.mapping);
+      s.setAttribute("data-term", GISCUS_CFG.term);
+      s.setAttribute("data-strict", "0");
+      s.setAttribute("data-reactions-enabled", "1");
+      s.setAttribute("data-emit-metadata", "0");
+      s.setAttribute("data-input-position", "top");
+      s.setAttribute("data-theme", GISCUS_CFG.theme);
+      s.setAttribute("data-lang", GISCUS_CFG.lang);
+      s.setAttribute("data-loading", "lazy");
+      s.addEventListener("error", () => {
+        giscusStatus = "error";
+        const el = $("giscusLoading");
+        if (el) el.textContent = "Chat failed to load. Check connection and reopen to retry.";
+      }, { once: true });
+
+      mount.appendChild(s);
+
+      const obs = new MutationObserver(() => {
+        const iframe = mount.querySelector("iframe.giscus-frame");
+        if (!iframe) return;
+        giscusStatus = "loaded";
+        $("giscusLoading")?.remove();
+        setGiscusTheme(GISCUS_CFG.theme);
+        obs.disconnect();
+      });
+      obs.observe(mount, { childList: true, subtree: true });
+    }
+
+    // --------- Adventure Overlay (keeps audio playing) ----------
+    let adventureFrameLoaded = false;
+    let pendingAdventureGoToTrackId = "";
+
+    function ensureAdventureFrameLoaded(){
+      const frame = $("adventureFrame");
+      if (!frame) return;
+      if (adventureFrameLoaded) return;
+      frame.src = "./adventure.html?embed=1&v=20260204-05";
+      adventureFrameLoaded = true;
+    }
+
+    function handleAdventureGoToTrack(trackId){
+      const id = String(trackId || "").trim();
+      if (!id) return;
+      if (!album || !Array.isArray(album.tracks)) {
+        pendingAdventureGoToTrackId = id;
+        return;
+      }
+      const i = album.tracks.findIndex(t => t.id === id);
+      if (i >= 0) loadTrack(i, true);
+    }
+
+    window.addEventListener("message", (event) => {
+      try {
+        if (event.origin !== window.location.origin) return;
+      } catch {
+        return;
+      }
+
+      const frameWin = $("adventureFrame")?.contentWindow;
+      if (frameWin && event.source !== frameWin) return;
+
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "ev:close_adventure") {
+        closeDrawer("adventureDrawer");
+        return;
+      }
+
+      if (data.type === "ev:go_to_track") {
+        closeDrawer("adventureDrawer");
+        handleAdventureGoToTrack(data.trackId);
+      }
+    });
 
     // --------- Utility functions ----------
     function applyAura(track){
@@ -222,56 +370,158 @@
       el.textContent = text;
     }
 
-    // --------- Umami helpers ----------
+    // --------- Activity log (local) ----------
     const eventLog = [];
     function umamiTrack(eventName, data = {}) {
+      const t = Date.now();
       try {
         if (window.umami && typeof window.umami.track === "function") {
           window.umami.track(eventName, data);
-          eventLog.push({ t: new Date().toISOString(), eventName, data });
-          renderEventLog();
+          eventLog.push({ t, eventName, data, status: "tracked" });
         } else {
-          // Still log locally so you can confirm intent.
-          eventLog.push({ t: new Date().toISOString(), eventName: eventName + " (local-only)", data });
-          renderEventLog();
+          eventLog.push({ t, eventName, data, status: "local" });
         }
       } catch (e) {
-        eventLog.push({ t: new Date().toISOString(), eventName: eventName + " (err)", data: { error: String(e) } });
-        renderEventLog();
+        eventLog.push({ t, eventName, data: { ...data, error: String(e) }, status: "error" });
+      }
+      renderEventLog();
+    }
+
+    function fmtClock(ms){
+      try { return new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+      catch { return ""; }
+    }
+
+    function humanizeEvent({ eventName, data, status }){
+      const d = data || {};
+      const track = d.track_title || d.track_id || "";
+
+      if (status === "error") return "Something didn’t load right.";
+
+      switch (eventName) {
+        case "page_view_player": return "Opened the player.";
+        case "view_switch": return d.view === "gallery" ? "Opened cover art." : "Opened now playing.";
+        case "drawer_open": {
+          const map = { lyricsDrawer: "Lyrics", conceptDrawer: "Concept", statsDrawer: "Activity", chatDrawer: "Chat Wall", adventureDrawer: "Adventure" };
+          return `Opened ${map[d.drawer] || "a panel"}.`;
+        }
+        case "drawer_close": {
+          const map = { lyricsDrawer: "Lyrics", conceptDrawer: "Concept", statsDrawer: "Activity", chatDrawer: "Chat Wall", adventureDrawer: "Adventure" };
+          return `Closed ${map[d.drawer] || "a panel"}.`;
+        }
+        case "theme_toggle": return `Theme: ${d.theme === "love" ? "Love" : "Anti-Love"}.`;
+        case "track_select": return track ? `Selected: ${track}.` : "Selected a track.";
+        case "play": return track ? `Play: ${track}.` : "Play.";
+        case "pause": return "Pause.";
+        case "restart": return track ? `Restarted: ${track}.` : "Restarted.";
+        case "progress": return d.milestone ? `Reached ${d.milestone}%.` : "Progress.";
+        case "ended": return track ? `Finished: ${track}.` : "Finished.";
+        default: return String(eventName || "").replace(/_/g, " ") + ".";
       }
     }
+
     function renderEventLog() {
-      $("eventLog").textContent = eventLog.slice(-30).map(x => `${x.t}  ${x.eventName}  ${JSON.stringify(x.data)}`).join("\n");
+      const el = $("eventLog");
+      if (!el) return;
+      el.textContent = eventLog
+        .slice(-30)
+        .map((x) => `${fmtClock(x.t)}  ${humanizeEvent(x)}`.trim())
+        .join("\n");
     }
 
     // --------- State ----------
     const audio = $("audio");
+
+    // Hidden Whispers (not listed as tracks)
+    const WHISPER_EVERY_N_TRACK_PLAYS = 4;
+    const WHISPER_FILES = [
+      "./whispers/whisper_1.mp3",
+      "./whispers/whisper_2.mp3",
+      "./whispers/whisper_3.mp3",
+      "./whispers/whisper_4.mp3"
+    ];
+    const TRACK_PLAY_COUNT_KEY = "ev_track_play_count_v1";
+    let trackPlayCount = Number(localStorage.getItem(TRACK_PLAY_COUNT_KEY) || "0");
+    let pendingTrackPlayCount = null;
+    const whisperAudio = new Audio();
+    whisperAudio.preload = "auto";
+    whisperAudio.crossOrigin = "anonymous";
+    whisperAudio.volume = 0.9;
+    let whispering = false;
+    let whisperEndHandler = null;
+
     let album = null;
     let idx = 0;
     let milestones = new Set(); // progress milestones for current track
     let theme = localStorage.getItem("ev_theme") || "anti";
     let lastFocus = null;
 
-    // Local usage estimate (per device)
-    const LS_KEY = "ev_local_usage_v1";
-    const localUsage = JSON.parse(localStorage.getItem(LS_KEY) || "{}"); // trackId -> bytesServedEstimate
+    function pickWhisper(){
+      return WHISPER_FILES[Math.floor(Math.random() * WHISPER_FILES.length)];
+    }
+    function stopWhisper(){
+      if (whisperEndHandler) {
+        try { whisperAudio.removeEventListener("ended", whisperEndHandler); } catch {}
+        try { whisperAudio.removeEventListener("error", whisperEndHandler); } catch {}
+        whisperEndHandler = null;
+      }
+      try { whisperAudio.pause(); } catch {}
+      try { whisperAudio.currentTime = 0; } catch {}
+      whispering = false;
+    }
+    function willWhisperOn(count){ return WHISPER_EVERY_N_TRACK_PLAYS > 0 && (count % WHISPER_EVERY_N_TRACK_PLAYS === 0); }
 
-    function saveLocalUsage() {
-      localStorage.setItem(LS_KEY, JSON.stringify(localUsage));
-      renderLocalEstimate();
+    function commitTrackPlayCountIfPending(){
+      if (pendingTrackPlayCount == null) return;
+      trackPlayCount = pendingTrackPlayCount;
+      pendingTrackPlayCount = null;
+      localStorage.setItem(TRACK_PLAY_COUNT_KEY, String(trackPlayCount));
     }
 
-    function bytesToGB(bytes){ return bytes / (1024*1024*1024); }
-    function renderLocalEstimate() {
-      const totalBytes = Object.values(localUsage).reduce((a,b)=>a+(Number(b)||0), 0);
-      $("estGB").textContent = bytesToGB(totalBytes).toFixed(2) + " GB";
+    function startWhisperThenTrack(){
+      stopWhisper();
+      whispering = true;
+      showPlayError("");
+      setPlayBtn(true);
+
+      const src = pickWhisper();
+      try { whisperAudio.src = src; } catch {}
+      try { whisperAudio.currentTime = 0; } catch {}
+
+      const onEnd = () => {
+        if (whisperEndHandler !== onEnd) return;
+        whisperEndHandler = null;
+        whispering = false;
+        // Continue into the track
+        audio.play().catch(() => {
+          // If blocked, user can tap Play; keep pending count.
+          setPlayBtn(false);
+        });
+      };
+
+      whisperEndHandler = onEnd;
+      whisperAudio.addEventListener("ended", onEnd, { once: true });
+      whisperAudio.addEventListener("error", onEnd, { once: true });
+
+      whisperAudio.play().catch(() => {
+        // If whisper can't play, fall back to the track immediately.
+        onEnd();
+      });
     }
+
+    whisperAudio.addEventListener("play", () => {
+      setPlayBtn(true);
+    });
+    whisperAudio.addEventListener("pause", () => {
+      if (whispering && audio.paused) setPlayBtn(false);
+    });
 
     function setTheme(t){
       theme = t;
       document.body.setAttribute("data-theme", theme);
       localStorage.setItem("ev_theme", theme);
       $("themeLabel").textContent = theme === "love" ? "Love" : "Anti-Love";
+      setGiscusTheme(GISCUS_CFG.theme);
       umamiTrack("theme_toggle", { theme });
     }
 
@@ -431,6 +681,17 @@
       $("lyricsBtn").onclick = () => openDrawer("lyricsDrawer");
       $("conceptBtn").onclick = () => openDrawer("conceptDrawer");
       $("statsBtn").onclick = () => openDrawer("statsDrawer");
+      $("chatBtn").onclick = () => { openDrawer("chatDrawer"); ensureGiscusLoaded(); };
+
+      // Adventure: open as overlay so audio continues (allow modifier-click to open a new tab)
+      $("adventureBtn")?.addEventListener("click", (e) => {
+        if (e.defaultPrevented) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openDrawer("adventureDrawer");
+        ensureAdventureFrameLoaded();
+      });
+
       document.querySelectorAll("[data-close]").forEach(b=>{
         b.onclick = () => closeDrawer(b.getAttribute("data-close"));
       });
@@ -453,12 +714,6 @@
         audio.currentTime = p * audio.duration;
       });
 
-      $("resetLocalStats").onclick = () => {
-        for (const k of Object.keys(localUsage)) delete localUsage[k];
-        saveLocalUsage();
-        umamiTrack("local_stats_reset", {});
-      };
-
       // Keyboard
       window.addEventListener("keydown", (e)=>{
         const open = document.querySelector(".drawer.open");
@@ -478,6 +733,16 @@
         if (e.key.toLowerCase() === "n"){ next(true); }
         if (e.key.toLowerCase() === "p"){ prev(true); }
       });
+
+      // Deep-link: /index.html#chat
+      if (window.location.hash === "#chat") {
+        openDrawer("chatDrawer");
+        ensureGiscusLoaded();
+      }
+      if (window.location.hash === "#adventure") {
+        openDrawer("adventureDrawer");
+        ensureAdventureFrameLoaded();
+      }
 
       // Audio events
       audio.addEventListener("loadedmetadata", () => {
@@ -500,17 +765,14 @@
       });
       audio.addEventListener("play", () => {
         setPlayBtn(true);
-        umamiTrack("play", ctx());
-        // Local estimate: count one "play" as one full file served (rough upper-bound).
-        // Better estimates require server-side bytes; this is still useful for “danger zone” awareness.
-        const tr = album.tracks[idx];
-        if (tr.bytes) {
-          localUsage[tr.id] = (Number(localUsage[tr.id])||0) + Number(tr.bytes);
-          saveLocalUsage();
+        // Count "track plays" only when we start a track (not resume), and not for whispers.
+        if (pendingTrackPlayCount != null && audio.currentTime < 0.25) {
+          commitTrackPlayCountIfPending();
         }
+        umamiTrack("play", ctx());
       });
       audio.addEventListener("pause", () => {
-        setPlayBtn(false);
+        if (!whispering) setPlayBtn(false);
         umamiTrack("pause", ctx());
       });
       audio.addEventListener("ended", () => {
@@ -541,11 +803,11 @@
         album = await res.json();
       } catch (err) {
         console.error(err);
-        $("albumTitle").textContent = "EchoVerse Album";
-        $("albumSubtitle").textContent = "Missing album.json";
+        $("albumTitle").textContent = "EchoVerse";
+        $("albumSubtitle").textContent = "Album unavailable";
         const be = $("bootError");
         be.style.display = "block";
-        be.textContent = "Could not load ./album.json. Make sure it exists in the same folder as index.html (GitHub Pages: same directory).";
+        be.textContent = "We couldn’t load the album right now. Check your connection and refresh. If you’re hosting this page, make sure the album file is uploaded.";
         return;
       }
 
@@ -578,7 +840,10 @@
 
       umamiTrack("page_view_player", { album: album.album_title || "unknown" });
 
-      renderLocalEstimate();
+      if (pendingAdventureGoToTrackId) {
+        handleAdventureGoToTrack(pendingAdventureGoToTrackId);
+        pendingAdventureGoToTrackId = "";
+      }
     }
 
     function ctx(){
@@ -595,6 +860,8 @@
     function loadAudioForCurrent(autoplay){
       const tr = album.tracks[idx];
       showPlayError("");
+      stopWhisper();
+      pendingTrackPlayCount = null;
       if (!tr.audio || tr.available === false) {
         audio.removeAttribute("src");
         audio.load();
@@ -604,11 +871,19 @@
       }
       audio.src = tr.audio;
       audio.load();
-      if (autoplay) audio.play().catch(()=>{});
+      if (autoplay) {
+        // This counts as a new track play (not a resume).
+        const nextCount = pendingTrackPlayCount ?? (trackPlayCount + 1);
+        pendingTrackPlayCount = nextCount;
+        if (willWhisperOn(nextCount)) startWhisperThenTrack();
+        else audio.play().catch(()=>{});
+      }
       renderNow();
     }
 
     function loadTrack(i, autoplay){
+      stopWhisper();
+      pendingTrackPlayCount = null;
       idx = Math.max(0, Math.min(album.tracks.length-1, i));
       loadAudioForCurrent(autoplay);
       umamiTrack("track_select", ctx());
@@ -620,9 +895,25 @@
         showPlayError("Audio missing/unavailable for this track.");
         return;
       }
+      if (whispering) {
+        if (whisperAudio.paused) whisperAudio.play().catch(()=>{});
+        else whisperAudio.pause();
+        return;
+      }
       if (!audio.src) return;
-      if (audio.paused) audio.play().catch(()=>{});
-      else audio.pause();
+      if (!audio.paused) { audio.pause(); return; }
+
+      // Resume mid-track (no whisper)
+      if (audio.currentTime >= 0.25) {
+        audio.play().catch(()=>{});
+        return;
+      }
+
+      // Fresh track start (maybe whisper)
+      const nextCount = pendingTrackPlayCount ?? (trackPlayCount + 1);
+      pendingTrackPlayCount = nextCount;
+      if (willWhisperOn(nextCount)) startWhisperThenTrack();
+      else audio.play().catch(()=>{});
     }
 
     function next(autoplay){ loadTrack((idx+1) % album.tracks.length, autoplay); }

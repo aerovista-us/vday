@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#120817" />
+  <title>EchoVerse • Love Without Cords</title>
+
+  <meta name="description" content="A Valentine’s Day drop you can feel: music + mini challenges + reflection prompts—built to help you show up with presence and clean energy." />
+  <link rel="canonical" href="https://aerovista-us.github.io/vday/landing.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://aerovista-us.github.io/vday/landing.html" />
+  <meta property="og:title" content="EchoVerse • Love Without Cords" />
+  <meta property="og:description" content="Music + nine Signals + reflection—built to help you step into Valentine’s Day more present and intentional." />
+  <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-05">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="EchoVerse">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
+  <link rel="stylesheet" href="./styles.css?v=20260204-05" />
+
+  <style>
+    .landing-grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap: 14px; margin-top: 18px; }
+    @media (max-width: 980px){ .landing-grid{ grid-template-columns: 1fr; } }
+
+    .hero-card .panel{ padding-top: 0; }
+    .hero-title{ margin: 0; font-size: clamp(28px, 4vw, 44px); font-weight: 950; letter-spacing: .02em; line-height: 1.05; }
+    .hero-sub{ margin-top: 10px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 68ch; }
+
+    .hero-actions{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+    .chiprow{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+
+    .hero-art{
+      position:relative;
+      border-radius: var(--radius2);
+      overflow:hidden;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      box-shadow: var(--shadow);
+      min-height: 320px;
+    }
+    .hero-art img{ width:100%; height:100%; object-fit: cover; display:block; }
+    .hero-art::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(700px 420px at 25% 25%, rgba(255,79,216,.22), transparent 60%),
+        radial-gradient(700px 420px at 80% 35%, rgba(38,230,255,.14), transparent 62%),
+        linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.45));
+      pointer-events:none;
+    }
+
+    .covergrid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    @media (max-width: 540px){ .covergrid{ grid-template-columns: repeat(2, 1fr); } }
+    .covergrid a{ display:block; border-radius: 18px; overflow:hidden; border: 1px solid var(--line); background: rgba(0,0,0,.18); }
+    .covergrid img{ width:100%; aspect-ratio: 1 / 1; object-fit: cover; display:block; }
+
+    .landing-footer{ margin-top: 14px; display:flex; align-items:center; justify-content:space-between; gap: 10px; flex-wrap: wrap; }
+    .landing-footer .links{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .landing-footer a{ color: var(--muted); text-decoration:none; border-bottom: 1px solid transparent; }
+    .landing-footer a:hover{ color: var(--text); border-bottom-color: var(--line2); }
+  </style>
+
+  <script>
+    // If someone hits the landing again after the first run (from the installed app), hop them to the player.
+    (function () {
+      const KEY = "ev_seen_landing_v1";
+
+      function isStandalone() {
+        return (
+          window.matchMedia?.("(display-mode: standalone)")?.matches ||
+          window.matchMedia?.("(display-mode: minimal-ui)")?.matches ||
+          window.navigator?.standalone === true
+        );
+      }
+
+      function normalizeReturn(raw) {
+        const v = String(raw || "").trim();
+        if (!v) return "";
+        try {
+          const u = new URL(v, window.location.origin);
+          if (u.origin !== window.location.origin) return "";
+          if (u.pathname.endsWith("/landing.html")) return "";
+          return u.pathname + u.search + u.hash;
+        } catch {
+          return "";
+        }
+      }
+
+      function withSkipLanding(urlStr) {
+        try {
+          const u = new URL(urlStr, window.location.href);
+          u.searchParams.set("skipLanding", "1");
+          return u.pathname + u.search + u.hash;
+        } catch {
+          return urlStr;
+        }
+      }
+
+      const params = new URLSearchParams(window.location.search || "");
+      const returnTo = normalizeReturn(params.get("return"));
+      const next = withSkipLanding(returnTo || "./index.html");
+      const signalsHref = withSkipLanding("./index.html#adventure");
+      const chatHref = withSkipLanding("./index.html#chat");
+
+      const seenBefore = (() => {
+        try { return !!localStorage.getItem(KEY); }
+        catch { return false; }
+      })();
+
+      if (!seenBefore) {
+        try { localStorage.setItem(KEY, String(Date.now())); } catch {}
+      }
+
+      window.__EV_LANDING__ = { next, signalsHref, chatHref };
+
+      const pwaLaunch = params.get("source") === "pwa" || isStandalone();
+      if (seenBefore && pwaLaunch) {
+        window.location.replace(next);
+      }
+    })();
+  </script>
+
+  <script defer src="./pwa.js?v=20260204-05"></script>
+</head>
+
+<body data-theme="love">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="kicker">EchoVerse • AeroVista</div>
+        <div class="title">Valentine’s Day Drop</div>
+      </div>
+      <div class="controls">
+        <button class="btn badge primary" id="themeBtn" title="Toggle theme">
+          <span class="dot"></span>
+          <span id="themeLabel">Love</span>
+        </button>
+        <a class="btn primary" id="enterBtn" href="./index.html?skipLanding=1">Enter Player</a>
+        <a class="btn" id="signalsBtn" href="./index.html?skipLanding=1#adventure">Nine Signals</a>
+        <a class="btn" id="chatBtn" href="./index.html?skipLanding=1#chat">Chat</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="landing-grid">
+      <div class="card hero-card">
+        <div class="hd">
+          <div class="meta">
+            <div class="album">Love Without Cords</div>
+            <div class="name">A field guide in music form</div>
+            <div class="desc">Listen, unlock Signals, and take one clean takeaway into real life.</div>
+          </div>
+          <div class="pill">Free • No account</div>
+        </div>
+        <div class="panel">
+          <div class="section">
+            <h1 class="hero-title">Show up with love—without losing your power.</h1>
+            <p class="hero-sub">
+              This drop blends <strong>music</strong>, <strong>mini challenges</strong>, and <strong>short reflections</strong> to help you notice control patterns,
+              tighten boundaries without becoming cold, and source your energy instead of fighting for it.
+            </p>
+
+            <div class="hero-actions">
+              <a class="btn primary" id="enterBtn2" href="./index.html">Start listening</a>
+              <a class="btn" href="./index.html?skipLanding=1#adventure">Open the Nine Signals</a>
+              <a class="btn" href="./index.html?skipLanding=1#chat">Drop a note</a>
+            </div>
+
+            <div class="chiprow" aria-label="Highlights">
+              <div class="chip">🎧 Player + Lyrics</div>
+              <div class="chip">🧩 Nine Signals</div>
+              <div class="chip">✨ Takeaways</div>
+              <div class="chip">📲 Installable app</div>
+            </div>
+
+            <p class="small" style="margin-top:12px">Tip: Install for a full-screen, app-like experience and faster launches.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art" aria-label="Cover art preview">
+        <img src="./covers/01-energy-game.png" alt="Love Without Cords — cover art" loading="eager" decoding="async" />
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="hd">
+        <div class="meta">
+          <div class="album">Quick Start</div>
+          <div class="name">Choose a path</div>
+          <div class="desc">You can listen first, or jump straight into the Signals.</div>
+        </div>
+        <div class="pill">2 minutes</div>
+      </div>
+      <div class="panel">
+        <div class="section">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a class="btn primary" href="./index.html?skipLanding=1">Enter Player</a>
+            <a class="btn" href="./index.html?skipLanding=1#adventure">Explore Signals (keeps music playing)</a>
+            <a class="btn" href="./adventure.html">Signals (full page)</a>
+          </div>
+          <p class="small" style="margin-top:10px">If you’re visiting from a friend’s link, you’ll land right where they meant you to.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="hd">
+        <div class="meta">
+          <div class="album">Preview</div>
+          <div class="name">Cover collection</div>
+          <div class="desc">A glimpse of the album’s chapters.</div>
+        </div>
+        <div class="pill">Tap to view</div>
+      </div>
+      <div class="panel">
+        <div class="section">
+          <div class="covergrid" aria-label="Cover thumbnails">
+            <a href="./covers/01-energy-game.png" target="_blank" rel="noopener"><img src="./covers/01-energy-game.png" alt="Energy Game cover" loading="lazy" decoding="async"></a>
+            <a href="./covers/02-signs-in-the-static.png" target="_blank" rel="noopener"><img src="./covers/02-signs-in-the-static.png" alt="Signs in the Static cover" loading="lazy" decoding="async"></a>
+            <a href="./covers/03-receipts-and-ropes.png" target="_blank" rel="noopener"><img src="./covers/03-receipts-and-ropes.png" alt="Receipts and Ropes cover" loading="lazy" decoding="async"></a>
+            <a href="./covers/04-green-battery.png" target="_blank" rel="noopener"><img src="./covers/04-green-battery.png" alt="Green Battery cover" loading="lazy" decoding="async"></a>
+            <a href="./covers/05-focus-fire.png" target="_blank" rel="noopener"><img src="./covers/05-focus-fire.png" alt="Focus Fire cover" loading="lazy" decoding="async"></a>
+            <a href="./covers/06-the-observer.png" target="_blank" rel="noopener"><img src="./covers/06-the-observer.png" alt="The Observer cover" loading="lazy" decoding="async"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="landing-footer">
+      <div class="small">© AeroVista • EchoVerse • SkyForge</div>
+      <div class="links">
+        <a href="./index.html?skipLanding=1">Player</a>
+        <a href="./index.html?skipLanding=1#adventure">Signals</a>
+        <a href="./index.html?skipLanding=1#chat">Chat</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      let theme = localStorage.getItem("ev_theme") || "love";
+      function setTheme(t){
+        theme = t;
+        document.body.setAttribute("data-theme", theme);
+        localStorage.setItem("ev_theme", theme);
+        const label = document.getElementById("themeLabel");
+        if (label) label.textContent = theme === "love" ? "Love" : "Anti-Love";
+      }
+      setTheme(theme);
+      document.getElementById("themeBtn")?.addEventListener("click", ()=> setTheme(theme === "anti" ? "love" : "anti"));
+
+      // Mirror the computed "next" link onto the secondary CTA.
+      const next = window.__EV_LANDING__?.next || "./index.html?skipLanding=1";
+      const enter = document.getElementById("enterBtn");
+      const enter2 = document.getElementById("enterBtn2");
+      const chat = document.getElementById("chatBtn");
+      const signals = document.getElementById("signalsBtn");
+
+      if (enter) enter.setAttribute("href", next);
+      if (enter2) enter2.setAttribute("href", next);
+      if (chat && window.__EV_LANDING__?.chatHref) chat.setAttribute("href", window.__EV_LANDING__.chatHref);
+      if (signals && window.__EV_LANDING__?.signalsHref) signals.setAttribute("href", window.__EV_LANDING__.signalsHref);
+
+    })();
+  </script>
+</body>
+</html>

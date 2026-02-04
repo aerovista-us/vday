@@ -5,8 +5,15 @@
     return;
   }
 
-  const DISMISS_KEY = "ev_install_dismissed_at_v1";
-  const DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
+  const ASSET_VERSION = (() => {
+    try {
+      const src = document.currentScript?.src || "";
+      const u = new URL(src, window.location.href);
+      return (u.searchParams.get("v") || "").trim();
+    } catch {
+      return "";
+    }
+  })();
 
   let deferredPrompt = null;
 
@@ -25,31 +32,6 @@
     const iOSLike = /iPad|iPhone|iPod/.test(ua) || /iPad|iPhone|iPod/.test(platform);
     const iPadOS13Plus = platform === "MacIntel" && navigator.maxTouchPoints > 1;
     return iOSLike || iPadOS13Plus;
-  }
-
-  function recentlyDismissed() {
-    try {
-      const v = Number(localStorage.getItem(DISMISS_KEY) || "0");
-      return v > 0 && Date.now() - v < DISMISS_MS;
-    } catch {
-      return false;
-    }
-  }
-
-  function setDismissed() {
-    try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()));
-    } catch {
-      // ignore
-    }
-  }
-
-  function clearDismissed() {
-    try {
-      localStorage.removeItem(DISMISS_KEY);
-    } catch {
-      // ignore
-    }
   }
 
   function ensureBannerEl() {
@@ -92,7 +74,7 @@
     const primary = document.getElementById("evInstallPrimary");
     const secondary = document.getElementById("evInstallSecondary");
     if (primary && onPrimary) primary.addEventListener("click", onPrimary);
-    if (secondary) secondary.addEventListener("click", onSecondary || (() => { setDismissed(); hideBanner(); }));
+    if (secondary) secondary.addEventListener("click", onSecondary || (() => { hideBanner(); }));
   }
 
   async function tryPromptInstall() {
@@ -101,7 +83,6 @@
       deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
       deferredPrompt = null;
-      if (choice?.outcome === "accepted") clearDismissed();
       hideBanner();
     } catch {
       // If prompting fails, just hide.
@@ -111,7 +92,6 @@
 
   function maybeShowInstallUX() {
     if (isStandalone()) return;
-    if (recentlyDismissed()) return;
 
     if (deferredPrompt) {
       showBannerHTML({
@@ -121,7 +101,6 @@
         secondaryLabel: "Not now",
         onPrimary: tryPromptInstall,
         onSecondary: () => {
-          setDismissed();
           hideBanner();
         }
       });
@@ -136,17 +115,28 @@
         primaryLabel: "",
         secondaryLabel: "Got it",
         onSecondary: () => {
-          setDismissed();
           hideBanner();
         }
       });
+      return;
     }
+
+    // Other browsers: show instructions until beforeinstallprompt is available.
+    showBannerHTML({
+      title: "Install EchoVerse",
+      desc: "Tip: Open your browser menu (⋮) → “Install app” / “Add to Home screen” for the PWA experience.",
+      primaryLabel: "",
+      secondaryLabel: "Close",
+      onSecondary: hideBanner
+    });
   }
 
   async function registerSW() {
     if (!("serviceWorker" in navigator)) return;
     try {
-      await navigator.serviceWorker.register("./sw.js");
+      const swUrl = "./sw.js" + (ASSET_VERSION ? `?v=${encodeURIComponent(ASSET_VERSION)}` : "");
+      const reg = await navigator.serviceWorker.register(swUrl);
+      try { await reg.update(); } catch {}
     } catch {
       // ignore
     }
@@ -160,13 +150,12 @@
 
   window.addEventListener("appinstalled", () => {
     deferredPrompt = null;
-    clearDismissed();
     hideBanner();
   });
 
   window.addEventListener("load", () => {
     registerSW();
-    // Give layout a beat; show early but not instantly.
-    setTimeout(maybeShowInstallUX, 1400);
+    // Show the install promo on every top-level load (browsers still require a tap to trigger the native prompt).
+    setTimeout(maybeShowInstallUX, 700);
   });
 })();

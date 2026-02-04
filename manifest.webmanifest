@@ -3,7 +3,7 @@
   "short_name": "EchoVerse",
   "description": "Valentine’s Day Drop — Love Without Cords. A field manual in music form: energy awareness, control dramas, signal vs noise, focus vs fog, and co-creation without control.",
   "id": "./",
-  "start_url": "./?source=pwa",
+  "start_url": "./landing.html?source=pwa",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
@@ -21,14 +21,14 @@
       "name": "Player",
       "short_name": "Player",
       "description": "Open the album player",
-      "url": "./",
+      "url": "./?skipLanding=1",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Adventure",
       "short_name": "Adventure",
       "description": "Open the quest adventure",
-      "url": "./adventure.html",
+      "url": "./adventure.html?skipLanding=1",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
