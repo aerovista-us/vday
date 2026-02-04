@@ -1,4 +1,10 @@
 (() => {
+  try {
+    if (window.self !== window.top) return;
+  } catch {
+    return;
+  }
+
   const DISMISS_KEY = "ev_install_dismissed_at_v1";
   const DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -164,4 +170,3 @@
     setTimeout(maybeShowInstallUX, 1400);
   });
 })();
-
