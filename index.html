@@ -12,13 +12,13 @@
   <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-14">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-15">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=20260204-14">
+  <link rel="stylesheet" href="./styles.css?v=20260204-15">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
   <title>EchoVerse • Love Without Cords</title>
@@ -55,7 +55,7 @@
       }
     })();
   </script>
-  <script defer src="./pwa.js?v=20260204-14"></script>
+  <script defer src="./pwa.js?v=20260204-15"></script>
 </head>
 
 <body data-theme="anti" class="page-player">
@@ -384,7 +384,7 @@
       const frame = $("adventureFrame");
       if (!frame) return;
       if (adventureFrameLoaded) return;
-      frame.src = "./adventure.html?embed=1&v=20260204-14";
+      frame.src = "./adventure.html?embed=1&v=20260204-15";
       adventureFrameLoaded = true;
     }
 
@@ -525,6 +525,22 @@
         .join("\n");
     }
 
+    // --------- Cache busting ----------
+    // Bump this when you replace audio files with the same filename.
+    const BUILD_V = "20260204-15";
+    function withV(urlLike){
+      if (!BUILD_V) return urlLike;
+      try{
+        const u = new URL(String(urlLike || ""), window.location.href);
+        u.searchParams.set("v", BUILD_V);
+        return u.toString();
+      }catch{
+        const s = String(urlLike || "");
+        const sep = s.includes("?") ? "&" : "?";
+        return `${s}${sep}v=${encodeURIComponent(BUILD_V)}`;
+      }
+    }
+
     // --------- State ----------
     const audio = $("audio");
 
@@ -581,7 +597,7 @@
       setPlayBtn(true);
 
       const src = pickWhisper();
-      try { whisperAudio.src = src; } catch {}
+      try { whisperAudio.src = withV(src); } catch {}
       try { whisperAudio.currentTime = 0; } catch {}
 
       const onEnd = () => {
@@ -744,7 +760,7 @@
         tr.available = true;
         if (!tr.audio){ tr.available = false; return; }
         try {
-          const url = new URL(tr.audio, window.location.href);
+          const url = new URL(withV(tr.audio), window.location.href);
           const res = await fetch(url, { method: "HEAD", cache: "no-store" });
           tr.available = res.ok;
           const len = res.headers.get("content-length");
@@ -991,7 +1007,7 @@
         showPlayError("Audio missing/unavailable for this track.");
         return;
       }
-      audio.src = tr.audio;
+      audio.src = withV(tr.audio);
       audio.load();
       if (autoplay) {
         // This counts as a new track play (not a resume).
