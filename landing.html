@@ -15,7 +15,7 @@
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-05">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-07">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
@@ -24,7 +24,7 @@
 
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-  <link rel="stylesheet" href="./styles.css?v=20260204-05" />
+  <link rel="stylesheet" href="./styles.css?v=20260204-07" />
 
   <style>
     .landing-grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap: 14px; margin-top: 18px; }
@@ -139,7 +139,7 @@
     })();
   </script>
 
-  <script defer src="./pwa.js?v=20260204-05"></script>
+  <script defer src="./pwa.js?v=20260204-07"></script>
 </head>
 
 <body data-theme="love">
@@ -247,12 +247,63 @@
       </div>
     </div>
 
+    <div class="card" style="margin-top:14px" id="about">
+      <div class="hd">
+        <div class="meta">
+          <div class="album">About</div>
+          <div class="name">What this is + credits</div>
+          <div class="desc">A quick, human read on the point of the drop—plus who made it.</div>
+        </div>
+        <div class="pill">EchoVerse</div>
+      </div>
+      <div class="panel">
+        <div class="section" style="margin-bottom:12px">
+          <h3>What this is</h3>
+          <p>
+            A Valentine’s Day guide you can feel: music + small interactive gates + short reflection prompts.
+            It’s designed to help you step into connection with more awareness and less pressure.
+          </p>
+        </div>
+
+        <div class="section" style="margin-bottom:12px">
+          <h3>Credits</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px">
+            <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+              <div style="font-weight:950">Presented by</div>
+              <p><strong>AeroVista</strong> — building experiences that blend engineering, story, and real-world usefulness.</p>
+            </div>
+            <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+              <div style="font-weight:950">Creative</div>
+              <p><strong>EchoVerse</strong> — sound, mood, album identity, and the emotional through-line.</p>
+            </div>
+            <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+              <div style="font-weight:950">Interactive build</div>
+              <p><strong>SkyForge</strong> — gates, UI flow, and the playable layer.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Thank you</h3>
+          <p>
+            Thanks for taking a look. If this helps you or someone you care about, sharing it is the biggest support.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <a class="btn primary" href="./index.html?skipLanding=1">Enter Player</a>
+            <a class="btn" href="./index.html?skipLanding=1#adventure">Open the Nine Signals</a>
+            <a class="btn" href="mailto:hello@aerovista.us?subject=EchoVerse%20feedback">Send feedback</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="landing-footer">
       <div class="small">© AeroVista • EchoVerse • SkyForge</div>
       <div class="links">
         <a href="./index.html?skipLanding=1">Player</a>
         <a href="./index.html?skipLanding=1#adventure">Signals</a>
         <a href="./index.html?skipLanding=1#chat">Chat</a>
+        <a href="#about">About</a>
       </div>
     </div>
   </div>

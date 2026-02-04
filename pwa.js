@@ -5,6 +5,14 @@
     return;
   }
 
+  const hadControllerAtStart = (() => {
+    try { return ("serviceWorker" in navigator) && !!navigator.serviceWorker.controller; }
+    catch { return false; }
+  })();
+  let userInteracted = false;
+  window.addEventListener("pointerdown", () => { userInteracted = true; }, { passive: true, once: true });
+  window.addEventListener("keydown", () => { userInteracted = true; }, { once: true });
+
   const ASSET_VERSION = (() => {
     try {
       const src = document.currentScript?.src || "";
@@ -96,7 +104,7 @@
     if (deferredPrompt) {
       showBannerHTML({
         title: "Install EchoVerse",
-        desc: "Get the full-screen player and faster launches from your home screen.",
+        desc: "Tip: Open your browser menu (⋮) → “Install app” / “Add to Home screen” for the PWA experience.",
         primaryLabel: "Install",
         secondaryLabel: "Not now",
         onPrimary: tryPromptInstall,
@@ -110,8 +118,8 @@
     // iOS: no beforeinstallprompt, so we show quick instructions.
     if (isIOS()) {
       showBannerHTML({
-        title: "Add to Home Screen",
-        desc: "iPhone/iPad: Share → Add to Home Screen for the app-like experience.",
+        title: "Install EchoVerse",
+        desc: "Tip: iPhone/iPad: Share → Add to Home Screen for the PWA experience.",
         primaryLabel: "",
         secondaryLabel: "Got it",
         onSecondary: () => {
@@ -131,6 +139,17 @@
     });
   }
 
+  // Allow pages to trigger install UX from a header button.
+  window.addEventListener("ev:install_request", () => {
+    if (isStandalone()) return;
+    if (deferredPrompt) {
+      // User gesture → we can prompt directly.
+      tryPromptInstall();
+    } else {
+      maybeShowInstallUX();
+    }
+  });
+
   async function registerSW() {
     if (!("serviceWorker" in navigator)) return;
     try {
@@ -140,6 +159,25 @@
     } catch {
       // ignore
     }
+  }
+
+  // If an older SW was already controlling this page, reload once when the new
+  // controller takes over. This prevents “half-updated” loads (e.g., broken images)
+  // without forcing refreshes on first-time visitors.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!hadControllerAtStart) return;
+      if (userInteracted) return;
+      try { if (performance.now() > 12000) return; } catch {}
+      try {
+        const key = "ev_sw_reload_once";
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, "1");
+      } catch {
+        // ignore storage failures
+      }
+      window.location.reload();
+    });
   }
 
   window.addEventListener("beforeinstallprompt", (e) => {

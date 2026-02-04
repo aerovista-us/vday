@@ -12,13 +12,13 @@
   <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-05">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-07">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=20260204-05">
+  <link rel="stylesheet" href="./styles.css?v=20260204-07">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
   <title>EchoVerse • Love Without Cords</title>
@@ -55,7 +55,7 @@
       }
     })();
   </script>
-  <script defer src="./pwa.js?v=20260204-05"></script>
+  <script defer src="./pwa.js?v=20260204-07"></script>
 </head>
 
 <body data-theme="anti">
@@ -70,10 +70,10 @@
           <span class="dot"></span>
           <span id="themeLabel">Anti-Love</span>
         </button>
+        <button class="btn" id="installBtn" type="button">Install</button>
         <button class="btn" id="lyricsBtn">Lyrics</button>
-        <button class="btn" id="conceptBtn">Concept</button>
-        <button class="btn" id="statsBtn">Activity</button>
         <button class="btn" id="chatBtn">Chat</button>
+        <button class="btn" id="aboutBtn" type="button">About</button>
         <a href="./adventure.html" class="btn" id="adventureBtn">Adventure</a>
       </div>
     </div>
@@ -135,7 +135,8 @@
             <div class="section" id="aboutView">
               <h3>Now Playing</h3>
               <div class="big" id="mantra">—</div>
-              <p id="soundStyle">—</p>
+              <p id="conceptLine" class="small">—</p>
+              <pre id="takeawayText" style="white-space:pre-wrap;margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.45;font-family:inherit">—</pre>
               <p class="small" id="tip">Tap a track to start. Toggle Love/Anti to shift the whole mood.</p>
             </div>
 
@@ -161,34 +162,49 @@
     </div>
   </div>
 
-  <div class="drawer" id="conceptDrawer" aria-hidden="true">
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="conceptTitle" tabindex="-1">
+  <div class="drawer" id="aboutDrawer" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" tabindex="-1">
       <div class="shd">
-        <div class="ttl" id="conceptTitle">Concept</div>
-        <button class="btn" data-close="conceptDrawer" type="button">Close</button>
+        <div class="ttl" id="aboutTitle">About</div>
+        <button class="btn" data-close="aboutDrawer" type="button">Close</button>
       </div>
-      <div class="section" style="margin-bottom:10px">
-        <h3>Core</h3>
-        <div class="big" id="conceptCore">—</div>
-        <p id="conceptOpp">—</p>
-      </div>
-      <div class="section">
-        <h3>Takeaway</h3>
-        <pre id="conceptNotes"></pre>
-      </div>
-    </div>
-  </div>
 
-  <div class="drawer" id="statsDrawer" aria-hidden="true">
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
-      <div class="shd">
-        <div class="ttl" id="statsTitle">Activity</div>
-        <button class="btn" data-close="statsDrawer" type="button">Close</button>
+      <div class="section" style="margin-bottom:10px">
+        <h3>What this is</h3>
+        <p>
+          A Valentine’s Day guide you can feel: music + small interactive gates + short reflection prompts.
+          It’s built to help you step into connection with more awareness and less pressure.
+        </p>
       </div>
+
+      <div class="section" style="margin-bottom:10px">
+        <h3>Credits</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px">
+          <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+            <div style="font-weight:950">Presented by</div>
+            <p><strong>AeroVista</strong> — building experiences that blend engineering, story, and real-world usefulness.</p>
+          </div>
+          <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+            <div style="font-weight:950">Creative</div>
+            <p><strong>EchoVerse</strong> — sound, mood, album identity, and the emotional through-line.</p>
+          </div>
+          <div style="border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:18px;padding:12px">
+            <div style="font-weight:950">Interactive build</div>
+            <p><strong>SkyForge</strong> — gates, UI flow, and the playable layer.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="section">
-        <h3>Recent Activity</h3>
-        <p class="small">A lightweight timeline of what you’ve opened and played on this device.</p>
-        <pre id="eventLog" class="mono"></pre>
+        <h3>Thank you</h3>
+        <p>
+          Thanks for being here. If this helps you (or someone you care about), sharing it is the biggest support.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <a class="btn primary" href="./landing.html?skipLanding=1">Landing</a>
+          <a class="btn" href="./adventure.html">Open Adventure</a>
+          <a class="btn" href="mailto:hello@aerovista.us?subject=EchoVerse%20feedback">Send feedback</a>
+        </div>
       </div>
     </div>
   </div>
@@ -308,7 +324,7 @@
       const frame = $("adventureFrame");
       if (!frame) return;
       if (adventureFrameLoaded) return;
-      frame.src = "./adventure.html?embed=1&v=20260204-05";
+      frame.src = "./adventure.html?embed=1&v=20260204-07";
       adventureFrameLoaded = true;
     }
 
@@ -362,6 +378,26 @@
       return svg || null;
     }
 
+    // Retry broken images once (helps after SW updates / cold loads).
+    function bustUrlOnce(url){
+      try{
+        const u = new URL(String(url || ""), window.location.href);
+        u.searchParams.set("v", Date.now().toString(36));
+        return u.toString();
+      } catch {
+        return String(url || "");
+      }
+    }
+    document.addEventListener("error", (e) => {
+      const img = e?.target;
+      if (!img || img.tagName !== "IMG") return;
+      if (img.dataset && img.dataset.evRetried === "1") return;
+      const src = img.currentSrc || img.src;
+      if (!src) return;
+      try { img.dataset.evRetried = "1"; } catch {}
+      img.src = bustUrlOnce(src);
+    }, true);
+
     function showPlayError(msg){
       const el = $("playError");
       if (!el) return;
@@ -402,11 +438,11 @@
         case "page_view_player": return "Opened the player.";
         case "view_switch": return d.view === "gallery" ? "Opened cover art." : "Opened now playing.";
         case "drawer_open": {
-          const map = { lyricsDrawer: "Lyrics", conceptDrawer: "Concept", statsDrawer: "Activity", chatDrawer: "Chat Wall", adventureDrawer: "Adventure" };
+          const map = { lyricsDrawer: "Lyrics", chatDrawer: "Chat Wall", aboutDrawer: "About", adventureDrawer: "Adventure" };
           return `Opened ${map[d.drawer] || "a panel"}.`;
         }
         case "drawer_close": {
-          const map = { lyricsDrawer: "Lyrics", conceptDrawer: "Concept", statsDrawer: "Activity", chatDrawer: "Chat Wall", adventureDrawer: "Adventure" };
+          const map = { lyricsDrawer: "Lyrics", chatDrawer: "Chat Wall", aboutDrawer: "About", adventureDrawer: "Adventure" };
           return `Closed ${map[d.drawer] || "a panel"}.`;
         }
         case "theme_toggle": return `Theme: ${d.theme === "love" ? "Love" : "Anti-Love"}.`;
@@ -600,12 +636,13 @@
       $("nowIndex").textContent = "Track " + (idx+1) + " / " + album.tracks.length;
       $("nowMeta").textContent = [tr.concept_core, tr.opposing ? "vs " + tr.opposing : null].filter(Boolean).join(" • ");
       $("mantra").textContent = tr.mantra || "—";
-      $("soundStyle").textContent = tr.sound_style || "—";
+      $("conceptLine").textContent = [
+        tr.concept_core ? ("Concept: " + tr.concept_core) : null,
+        tr.opposing ? ("Opposing: " + tr.opposing) : null
+      ].filter(Boolean).join(" • ") || "—";
+      $("takeawayText").textContent = tr.takeaway || "—";
       const lyrics = String(tr.lyrics || "").trim();
       $("lyricsText").textContent = lyrics && !/^paste\s+track\b/i.test(lyrics) ? lyrics : "Lyrics coming soon.";
-      $("conceptCore").textContent = tr.concept_core || "—";
-      $("conceptOpp").textContent = tr.opposing ? ("Opposing: " + tr.opposing) : "—";
-      $("conceptNotes").textContent = tr.takeaway || "—";
       $("fileHint").textContent = tr.audio || "(audio unavailable)";
       const chip = $("sigilChip");
       chip.innerHTML = "";
@@ -664,6 +701,18 @@
     async function boot(){
       setTheme(theme);
 
+      // Hide Install button when already running as an installed app.
+      try{
+        const standalone =
+          window.matchMedia?.("(display-mode: standalone)")?.matches ||
+          window.matchMedia?.("(display-mode: minimal-ui)")?.matches ||
+          window.navigator?.standalone === true;
+        if (standalone) {
+          const b = $("installBtn");
+          if (b) b.style.display = "none";
+        }
+      } catch {}
+
       // Tabs
       document.querySelectorAll(".tab").forEach(btn=>{
         btn.addEventListener("click", () => {
@@ -678,10 +727,12 @@
       });
 
       // Drawers
+      $("installBtn")?.addEventListener("click", () => {
+        try { window.dispatchEvent(new Event("ev:install_request")); } catch {}
+      });
       $("lyricsBtn").onclick = () => openDrawer("lyricsDrawer");
-      $("conceptBtn").onclick = () => openDrawer("conceptDrawer");
-      $("statsBtn").onclick = () => openDrawer("statsDrawer");
       $("chatBtn").onclick = () => { openDrawer("chatDrawer"); ensureGiscusLoaded(); };
+      $("aboutBtn")?.addEventListener("click", () => openDrawer("aboutDrawer"));
 
       // Adventure: open as overlay so audio continues (allow modifier-click to open a new tab)
       $("adventureBtn")?.addEventListener("click", (e) => {
