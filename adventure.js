@@ -1008,6 +1008,16 @@ function buildTriangleQuest(){
   loadProgress();
 
   $$(".insight").forEach(card=>{
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    const label = $(".iname", card)?.textContent?.trim();
+    if (label) card.setAttribute("aria-label", `Open quest: ${label}`);
+    card.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        card.click();
+      }
+    });
     card.addEventListener("click", ()=>{
       activeInsight = card;
       const name = $(".iname", card)?.textContent?.trim() || "Quest";

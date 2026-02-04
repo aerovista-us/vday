@@ -4,14 +4,28 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0b0c10" />
+  <meta name="description" content="EchoVerse Adventure — unlock gates, complete mini-quests, and jump into the matching track." />
+  <link rel="canonical" href="https://aerovista-us.github.io/vday/adventure.html" />
   <title>EchoVerse • Adventure</title>
 
   <link rel="stylesheet" href="./styles.css">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
-  <!-- Optional Umami (same placeholders as player) -->
-  <script defer src="UMAMI_SCRIPT_URL" data-website-id="UMAMI_WEBSITE_ID"></script>
+  <!-- Optional Umami analytics (no request unless you set real values). -->
+  <script>
+    (function () {
+      const src = "UMAMI_SCRIPT_URL";
+      const websiteId = "UMAMI_WEBSITE_ID";
+      if (!src || src === "UMAMI_SCRIPT_URL") return;
+      if (!websiteId || websiteId === "UMAMI_WEBSITE_ID") return;
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.setAttribute("data-website-id", websiteId);
+      document.head.appendChild(s);
+    })();
+  </script>
 
   <style>
     /* Adventure page sits on top of styles.css, adding only what it needs */
@@ -39,6 +53,7 @@
     }
     .insight:hover{ border-color: var(--line2); box-shadow: 0 10px 26px rgba(0,0,0,.25); }
     .insight:active{ transform: translateY(1px); }
+    .insight:focus-visible{ outline: 2px solid var(--accent2); outline-offset: 3px; }
     .insight.unlocked { border-color: rgba(255,255,255,.24); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); }
 
     .label { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--muted); }

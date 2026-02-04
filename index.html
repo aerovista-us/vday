@@ -4,17 +4,33 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0b0c10" />
+  <meta name="description" content="EchoVerse • Love Without Cords — Valentine’s Day Drop. A field manual in music form: signal vs noise, cords vs freedom, focus vs fog, and co-creation without control." />
+  <link rel="canonical" href="https://aerovista-us.github.io/vday/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://aerovista-us.github.io/vday/" />
+  <meta property="og:title" content="EchoVerse • Love Without Cords" />
+  <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
+  <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="./styles.css">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
-  <title>EchoVerse • Album Player</title>
+  <title>EchoVerse • Love Without Cords</title>
 
-  <!-- ✅ Umami (replace with your values) -->
-  <script
-    defer
-    src="UMAMI_SCRIPT_URL"
-    data-website-id="UMAMI_WEBSITE_ID"
-  ></script>
+  <!-- Optional Umami analytics (no request unless you set real values). -->
+  <script>
+    (function () {
+      const src = "UMAMI_SCRIPT_URL";
+      const websiteId = "UMAMI_WEBSITE_ID";
+      if (!src || src === "UMAMI_SCRIPT_URL") return;
+      if (!websiteId || websiteId === "UMAMI_WEBSITE_ID") return;
+      const s = document.createElement("script");
+      s.defer = true;
+      s.src = src;
+      s.setAttribute("data-website-id", websiteId);
+      document.head.appendChild(s);
+    })();
+  </script>
 </head>
 
 <body data-theme="anti">
@@ -67,6 +83,7 @@
               <button class="btn" id="restartBtn">Restart</button>
             </div>
             <div class="small mono" id="fileHint"></div>
+            <div class="small" id="playError" role="status" aria-live="polite" style="display:none;color:var(--accent3)"></div>
           </div>
         </div>
 
@@ -121,20 +138,20 @@
 
   <!-- Drawers -->
   <div class="drawer" id="lyricsDrawer" aria-hidden="true">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lyricsTitle" tabindex="-1">
       <div class="shd">
-        <div class="ttl">Lyrics</div>
-        <button class="btn" data-close="lyricsDrawer">Close</button>
+        <div class="ttl" id="lyricsTitle">Lyrics</div>
+        <button class="btn" data-close="lyricsDrawer" type="button">Close</button>
       </div>
       <pre id="lyricsText"></pre>
     </div>
   </div>
 
   <div class="drawer" id="conceptDrawer" aria-hidden="true">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="conceptTitle" tabindex="-1">
       <div class="shd">
-        <div class="ttl">Concept</div>
-        <button class="btn" data-close="conceptDrawer">Close</button>
+        <div class="ttl" id="conceptTitle">Concept</div>
+        <button class="btn" data-close="conceptDrawer" type="button">Close</button>
       </div>
       <div class="section" style="margin-bottom:10px">
         <h3>Core</h3>
@@ -149,10 +166,10 @@
   </div>
 
   <div class="drawer" id="statsDrawer" aria-hidden="true">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
       <div class="shd">
-        <div class="ttl">Stats</div>
-        <button class="btn" data-close="statsDrawer">Close</button>
+        <div class="ttl" id="statsTitle">Stats</div>
+        <button class="btn" data-close="statsDrawer" type="button">Close</button>
       </div>
       <div class="section">
         <h3>Umami Events Fired</h3>
@@ -189,6 +206,14 @@
       return svg || null;
     }
 
+    function showPlayError(msg){
+      const el = $("playError");
+      if (!el) return;
+      const text = String(msg || "").trim();
+      el.style.display = text ? "block" : "none";
+      el.textContent = text;
+    }
+
     // --------- Umami helpers ----------
     const eventLog = [];
     function umamiTrack(eventName, data = {}) {
@@ -217,6 +242,7 @@
     let idx = 0;
     let milestones = new Set(); // progress milestones for current track
     let theme = localStorage.getItem("ev_theme") || "anti";
+    let lastFocus = null;
 
     // Local usage estimate (per device)
     const LS_KEY = "ev_local_usage_v1";
@@ -246,20 +272,38 @@
       const el = $("tracks");
       el.innerHTML = "";
       album.tracks.forEach((tr, i) => {
+        const available = tr.available !== false && !!tr.audio;
         const row = document.createElement("div");
-        row.className = "track" + (i===idx ? " active" : "");
+        row.className = "track" + (i===idx ? " active" : "") + (available ? "" : " disabled");
+        row.tabIndex = 0;
+        row.setAttribute("role","button");
+        row.setAttribute("aria-label", `Play track ${i+1}: ${tr.title || "Unknown"}`);
+        if (!available) row.setAttribute("aria-disabled","true");
         row.innerHTML = `
-          <div class="tn"><img alt="" src="${tr.cover}"></div>
+          <div class="tn"><img alt="" loading="lazy" decoding="async" src="${tr.cover}"></div>
           <div class="tmain">
             <div class="tname">${String(i+1).padStart(2,"0")} • ${tr.title}</div>
             <div class="tmeta">${tr.concept_core || ""}${tr.opposing ? "  ·  vs  " + tr.opposing : ""}</div>
           </div>
           <div class="tcta">
             <span class="badge">${tr.duration_hint || "—"}</span>
+            ${available ? "" : `<span class="badge" title="Audio file missing or unavailable">Missing audio</span>`}
             ${tr.sigil_svg ? `<span class="sigil-mini">${tr.sigil_svg}</span>` : ""}
           </div>
         `;
-        row.onclick = () => loadTrack(i, true);
+        row.addEventListener("click", () => {
+          if (!available) {
+            showPlayError("Audio missing/unavailable for this track.");
+            return;
+          }
+          loadTrack(i, true);
+        });
+        row.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            row.click();
+          }
+        });
         el.appendChild(row);
       });
       applyAura(album.tracks[idx]);
@@ -274,7 +318,17 @@
         a.target = "_blank";
         a.rel = "noopener";
         a.style.display = "block";
-        a.innerHTML = `<img alt="" src="${tr.cover}" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;border:1px solid var(--line)">`;
+        const img = document.createElement("img");
+        img.alt = (tr.title ? `${tr.title} cover art` : "Cover art");
+        img.src = tr.cover;
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.style.width = "100%";
+        img.style.aspectRatio = "1 / 1";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "14px";
+        img.style.border = "1px solid var(--line)";
+        a.appendChild(img);
         g.appendChild(a);
       });
     }
@@ -283,16 +337,18 @@
       const tr = album.tracks[idx];
       applyAura(tr);
       $("coverImg").src = tr.cover;
+      $("coverImg").alt = tr.title ? `${tr.title} cover art` : "Cover art";
       $("nowTitle").textContent = tr.title;
       $("nowIndex").textContent = "Track " + (idx+1) + " / " + album.tracks.length;
       $("nowMeta").textContent = [tr.concept_core, tr.opposing ? "vs " + tr.opposing : null].filter(Boolean).join(" • ");
       $("mantra").textContent = tr.mantra || "—";
       $("soundStyle").textContent = tr.sound_style || "—";
-      $("lyricsText").textContent = tr.lyrics || "—";
+      const lyrics = String(tr.lyrics || "").trim();
+      $("lyricsText").textContent = lyrics && !/^paste\s+track\b/i.test(lyrics) ? lyrics : "Lyrics coming soon.";
       $("conceptCore").textContent = tr.concept_core || "—";
       $("conceptOpp").textContent = tr.opposing ? ("Opposing: " + tr.opposing) : "—";
       $("conceptNotes").textContent = tr.takeaway || "—";
-      $("fileHint").textContent = tr.audio;
+      $("fileHint").textContent = tr.audio || "(audio unavailable)";
       const chip = $("sigilChip");
       chip.innerHTML = "";
       const svg = svgToEl(tr.sigil_svg);
@@ -301,6 +357,7 @@
       $("tCur").textContent = "0:00";
       $("tDur").textContent = "0:00";
       $("seek").value = 0;
+      showPlayError("");
       // update active row highlighting
       document.querySelectorAll(".track").forEach((x, i) => x.classList.toggle("active", i===idx));
     }
@@ -314,6 +371,35 @@
 
     function setPlayBtn(playing){
       $("playBtn").textContent = playing ? "Pause" : "Play";
+    }
+
+    function findNextAvailable(startIdx){
+      const n = album?.tracks?.length || 0;
+      if (!n) return -1;
+      for (let step = 0; step < n; step++){
+        const i = (startIdx + step) % n;
+        const tr = album.tracks[i];
+        if (tr && tr.available !== false && tr.audio) return i;
+      }
+      return -1;
+    }
+
+    async function preflightTracks(){
+      const tasks = album.tracks.map(async (tr) => {
+        tr.available = true;
+        if (!tr.audio){ tr.available = false; return; }
+        try {
+          const url = new URL(tr.audio, window.location.href);
+          const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+          tr.available = res.ok;
+          const len = res.headers.get("content-length");
+          if (len && (!tr.bytes || Number(tr.bytes) === 0)) tr.bytes = Number(len);
+        } catch {
+          // If preflight fails (e.g., file://), don’t block playback.
+          tr.available = true;
+        }
+      });
+      await Promise.all(tasks);
     }
 
     // --------- Core actions ----------
@@ -367,8 +453,16 @@
 
       // Keyboard
       window.addEventListener("keydown", (e)=>{
-        const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
-        if (tag === "input" || tag === "textarea") return;
+        const open = document.querySelector(".drawer.open");
+        if (open) {
+          if (e.key === "Escape") { e.preventDefault(); closeDrawer(open.id); }
+          return;
+        }
+        const active = document.activeElement;
+        const tag = (active && active.tagName || "").toLowerCase();
+        if (["input","textarea","select","button","a"].includes(tag)) return;
+        if (active && active.isContentEditable) return;
+        if (active && active.closest && active.closest(".track")) return;
 
         if (e.code === "Space"){ e.preventDefault(); togglePlay(); }
         if (e.key === "ArrowLeft"){ audio.currentTime = Math.max(0, audio.currentTime - 5); }
@@ -416,6 +510,21 @@
         umamiTrack("ended", ctx());
         next(true);
       });
+      audio.addEventListener("error", () => {
+        if (!album) return;
+        const tr = album?.tracks?.[idx];
+        if (tr) tr.available = false;
+        renderTracks();
+        setPlayBtn(false);
+        showPlayError("Could not load audio for this track. Skipping to the next available track…");
+        const nextIdx = findNextAvailable(idx + 1);
+        if (nextIdx !== -1 && nextIdx !== idx) {
+          idx = nextIdx;
+          renderTracks();
+          renderNow();
+          loadAudioForCurrent(true);
+        }
+      });
 
       // Load JSON
       try {
@@ -435,6 +544,11 @@
       $("albumTitle").textContent = album.album_title || "EchoVerse Album";
       $("albumSubtitle").textContent = album.drop_title || "Experience Drop";
       $("albumDesc").textContent = album.description || "";
+
+      const pageTitle = [album.album_title, album.drop_title].filter(Boolean).join(" • ");
+      if (pageTitle) document.title = pageTitle;
+
+      try { await preflightTracks(); } catch {}
 
       // Check if coming from adventure page with track selection
       const adventureTrack = localStorage.getItem('ev_track');
@@ -482,6 +596,14 @@
 
     function loadAudioForCurrent(autoplay){
       const tr = album.tracks[idx];
+      showPlayError("");
+      if (!tr.audio || tr.available === false) {
+        audio.removeAttribute("src");
+        audio.load();
+        setPlayBtn(false);
+        showPlayError("Audio missing/unavailable for this track.");
+        return;
+      }
       audio.src = tr.audio;
       audio.load();
       if (autoplay) audio.play().catch(()=>{});
@@ -495,6 +617,11 @@
     }
 
     function togglePlay(){
+      const tr = album?.tracks?.[idx];
+      if (!tr || !tr.audio || tr.available === false) {
+        showPlayError("Audio missing/unavailable for this track.");
+        return;
+      }
       if (!audio.src) return;
       if (audio.paused) audio.play().catch(()=>{});
       else audio.pause();
@@ -505,14 +632,22 @@
 
     function openDrawer(id){
       const d = $(id);
+      lastFocus = document.activeElement;
       d.classList.add("open");
       d.setAttribute("aria-hidden","false");
+      const sheet = d.querySelector(".sheet");
+      requestAnimationFrame(() => {
+        const closeBtn = d.querySelector("[data-close]");
+        (closeBtn || sheet || d).focus?.();
+      });
       umamiTrack("drawer_open", { ...ctx(), drawer: id });
     }
     function closeDrawer(id){
       const d = $(id);
       d.classList.remove("open");
       d.setAttribute("aria-hidden","true");
+      if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+      lastFocus = null;
       umamiTrack("drawer_close", { ...ctx(), drawer: id });
     }
 

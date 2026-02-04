@@ -1,7 +1,7 @@
 {
   "album_title": "EchoVerse • Love Without Cords",
   "drop_title": "Valentine’s Day Drop",
-  "description": "A field manual in music form: signal vs noise, cords vs freedom, focus vs fog, and co-creation without control.",
+  "description": "A nine-insight field manual in music form: energy awareness, control dramas, signal vs noise, cords vs freedom, focus vs fog, and co-creation without control.",
   "tracks": [
     {
       "id": "t01_energy_game",
@@ -10,30 +10,30 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='18' fill='none' stroke='currentColor' stroke-width='2'/><circle cx='32' cy='32' r='8' fill='currentColor'/><path d='M32 14 L32 20 M32 44 L32 50 M14 32 L20 32 M44 32 L50 32' stroke='currentColor' stroke-width='2' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_1_v2_energy_game_take_shield_source.mp3",
       "cover": "./covers/01-energy-game.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "Energy game… take / shield / source",
-      "concept_core": "Energy exchange & control patterns",
-      "opposing": "Boundaries & sourced power",
-      "takeaway": "Know the hook. Don’t JADE. Exit clean. Source your energy instead of fighting for it.",
+      "duration_hint": "3:16",
+      "bytes": 4436614,
+      "mantra": "Name the game. Shield clean. Source your power.",
+      "concept_core": "Control dramas & energy exchange",
+      "opposing": "Clean boundaries & sourced power",
+      "takeaway": "Practice:\n• Spot the control drama (intimidator, interrogator, aloof, or “poor me”).\n• Don’t JADE (justify, argue, defend, explain).\n• Name the boundary once, then exit the loop.\n• Refill from source (breath, nature, craft) so you don’t bargain from depletion.",
       "sound_style": "Heavy mid-tempo half-time SwampHop. Thick clean sub, minimal hats, tight snare, gritty stabs. Calm menace.",
-      "lyrics": "Paste Track 1 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t02_signs_static",
       "title": "Signs in the Static",
       "aura": { "a1": "#26e6ff", "a2": "#ffffff" },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M12 32 Q20 20, 28 32 T44 32' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/><path d='M12 40 Q20 28, 28 40 T44 40' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/></svg>",
-      "audio": "./audio/02-signs-in-the-static.mp3",
+      "audio": "./audio/track_2_v2_signs_in_the_static.mp3",
       "cover": "./covers/02-signs-in-the-static.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "Signal feels like peace. Noise feels like need.",
-      "concept_core": "Synchronicity & intuition",
-      "opposing": "Fear-based noise",
-      "takeaway": "Signal repeats with calm. Noise rushes and demands. Follow peace, test small, keep your breath.",
+      "duration_hint": "2:44",
+      "bytes": 3436702,
+      "mantra": "Signal arrives calm. Noise arrives urgent.",
+      "concept_core": "Synchronicity & signal-reading",
+      "opposing": "Urgency, fear, and static",
+      "takeaway": "Signal checklist:\n• Calm repetition + steady breath = signal.\n• Urgency, dread, or spiraling = noise.\n• Take one small grounded step, test reality, and let clarity stack before you commit.",
       "sound_style": "Half-time glide. Airy space, radio hiss texture, glitch-chime sparks, warm guitar bends.",
-      "lyrics": "Paste Track 2 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t03_receipts_ropes",
@@ -42,14 +42,14 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M20 20 L44 44' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><path d='M20 44 L44 20' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='32' cy='32' r='4' fill='currentColor'/></svg>",
       "audio": "./audio/track_3_v2_receipts_&_ropes.mp3",
       "cover": "./covers/03-receipts-and-ropes.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "Receipts & ropes… I cut both",
-      "concept_core": "Control dramas in relationships",
-      "opposing": "Clean boundaries",
-      "takeaway": "No proving. No debating. Name the hook and choose distance.",
+      "duration_hint": "2:14",
+      "bytes": 3094230,
+      "mantra": "No receipts. No ropes. I cut clean.",
+      "concept_core": "Relationship control dramas",
+      "opposing": "Boundaries without proving",
+      "takeaway": "Cut the rope:\n• Drop the receipts and the proving.\n• Don’t debate the hook—control dramas feed on reaction.\n• Set the limit, leave the stage, and return only when respect is present.",
       "sound_style": "Crunchy bar-bounce. Heavy sub, snappy snare, minimal hats, porch/lantern tension.",
-      "lyrics": "Paste Track 3 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t04_green_battery",
@@ -58,14 +58,14 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='16' fill='none' stroke='currentColor' stroke-width='2.5'/><circle cx='32' cy='32' r='8' fill='none' stroke='currentColor' stroke-width='2'/></svg>",
       "audio": "./audio/track_4_v2_green_battery.mp3",
       "cover": "./covers/04-green-battery.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "Energy clean— yeah, I source my light",
-      "concept_core": "Source energy & leak-sealing",
-      "opposing": "Drama fuel",
-      "takeaway": "Stop the leaks (doomscroll, arguing, late-night spirals). Recharge in nature and craft.",
+      "duration_hint": "3:00",
+      "bytes": 4125880,
+      "mantra": "Seal the leaks. Source the light.",
+      "concept_core": "Sourcing energy & sealing leaks",
+      "opposing": "Drama-based fuel",
+      "takeaway": "Recharge protocol:\n• Audit leaks (doomscroll, late-night spirals, arguing, over-giving).\n• Replace with clean inputs (sleep, sunlight, movement, nature, building something real).\n• When you’re charged, you don’t need to take energy from anyone.",
       "sound_style": "Warm half-time SwampHop. Organic ambience, wind/crickets, soulful guitar, big pockets.",
-      "lyrics": "Paste Track 4 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t05_focus_fire",
@@ -74,14 +74,14 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M32 16 L28 40 L32 48 L36 40 Z' fill='currentColor'/><path d='M24 32 Q32 28, 40 32' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_5_v2_focus_fire.mp3",
       "cover": "./covers/05-focus-fire.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "Focus = fire… I light what I stare at",
-      "concept_core": "Intention → action → momentum",
-      "opposing": "Reaction & fog",
-      "takeaway": "One north star. One next step. Track it. Return fast. Momentum beats mood.",
+      "duration_hint": "0:48",
+      "bytes": 1095865,
+      "mantra": "Focus is fire. I light what I feed.",
+      "concept_core": "Focused intention → momentum",
+      "opposing": "Reaction, fog, and fragmentation",
+      "takeaway": "Focus ritual:\n• One north star.\n• One next move.\n• Put attention where energy rises, track the reps, return fast.",
       "sound_style": "Aggressive minimal half-time. Ember crackle motif, heavy sub, disciplined space, mantra hook.",
-      "lyrics": "Paste Track 5 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t06_the_observer",
@@ -90,14 +90,14 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='12' fill='none' stroke='currentColor' stroke-width='2.5'/><path d='M32 20 L32 16 M32 44 L32 48 M20 32 L16 32 M44 32 L48 32' stroke='currentColor' stroke-width='2' stroke-linecap='round'/><circle cx='32' cy='32' r='3' fill='currentColor'/></svg>",
       "audio": "./audio/track_6_v2_the_observer.mp3",
       "cover": "./covers/06-the-observer.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "See everything… need nothing… move clean",
-      "concept_core": "Energy perception & detachment",
-      "opposing": "Getting hooked",
-      "takeaway": "Scan calmly. Don’t perform. Ask one clean question. Exit with grace.",
+      "duration_hint": "2:30",
+      "bytes": 3251084,
+      "mantra": "See everything. Need nothing. Move clean.",
+      "concept_core": "Observer consciousness & energetic clarity",
+      "opposing": "Hooked reactivity",
+      "takeaway": "Observer mode:\n• Notice the pull without becoming it.\n• Breathe, then choose the clean action.\n• Ask one clear question, then exit with grace—no performance, no proving.",
       "sound_style": "Slow, surgical half-time. Room tone, sparse hats, deep sub, noir tension, dry voice.",
-      "lyrics": "Paste Track 6 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     },
     {
       "id": "t07_co_creator",
@@ -106,14 +106,14 @@
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M20 32 Q32 20, 44 32 Q32 44, 20 32' fill='none' stroke='currentColor' stroke-width='2.5'/><path d='M32 20 L32 44' stroke='currentColor' stroke-width='2' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_7_v2_the_co-creator.mp3",
       "cover": "./covers/07-co-creator.png",
-      "duration_hint": "—",
-      "bytes": 0,
-      "mantra": "We don't take, we trade",
-      "concept_core": "Healthy exchange & aligned partnership",
-      "opposing": "Strings and tests",
-      "takeaway": "Consent, plain truth, quick repair, celebrate wins. Build momentum together.",
+      "duration_hint": "2:56",
+      "bytes": 3942595,
+      "mantra": "We don’t take—we trade. We build.",
+      "concept_core": "Aligned exchange & co-creation",
+      "opposing": "Strings, tests, and control",
+      "takeaway": "Co-creator rules:\n• Clean asks, clean yes/no.\n• Repair fast and celebrate wins.\n• Build the third thing together—without cords, without games, with consent and momentum.",
       "sound_style": "Warm half-time bounce. Unity pad, warm guitars, thick sub, calm swagger.",
-      "lyrics": "Paste Track 7 Lean v2 here."
+      "lyrics": "Lyrics coming soon."
     }
   ]
 }
