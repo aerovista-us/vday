@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b0c10" />
   <meta name="description" content="EchoVerse Adventure — nine signals, nine mini-quests, and a direct jump into the matching track." />
   <link rel="canonical" href="https://aerovista-us.github.io/vday/adventure.html" />
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-08">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-12">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>EchoVerse • The Nine Signals</title>
 
-  <link rel="stylesheet" href="./styles.css?v=20260204-08">
+  <link rel="stylesheet" href="./styles.css?v=20260204-12">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
@@ -52,7 +52,7 @@
       }
     })();
   </script>
-  <script defer src="./pwa.js?v=20260204-08"></script>
+  <script defer src="./pwa.js?v=20260204-12"></script>
 
   <style>
     /* Adventure page sits on top of styles.css, adding only what it needs */
@@ -60,6 +60,7 @@
     .center { text-align:center; }
     .heroTitle { font-size: clamp(26px, 4vw, 40px); font-weight: 950; letter-spacing:.08em; text-transform: uppercase; margin: 14px 0 8px; }
     .subTitle { max-width: 66ch; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .heroActions{ margin-top: 12px; display:flex; justify-content:center; gap: 10px; flex-wrap:wrap; }
 
     .layout { display:grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
     @media (max-width: 980px){ .layout{ grid-template-columns: 1fr; } }
@@ -133,6 +134,30 @@
         0 0 18px color-mix(in oklab, var(--card-a1) 22%, transparent),
         inset 0 0 0 1px rgba(255,255,255,.06);
     }
+    .insight.next-up{
+      border-color: color-mix(in oklab, var(--card-a2) 42%, rgba(255,255,255,.18));
+      box-shadow:
+        0 18px 54px rgba(0,0,0,.44),
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 0 40px color-mix(in oklab, var(--card-a1) 20%, transparent);
+      transform: translateY(-2px);
+    }
+    .insight .noteBadge{
+      position:absolute;
+      left: 12px;
+      top: 12px;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity .2s ease, transform .2s ease;
+      pointer-events:none;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+    }
+    .insight.has-note .noteBadge{
+      opacity: .95;
+      transform: translateY(0);
+    }
 
     /* Per-signal accent colors (keeps the grid feeling alive) */
     .insight[data-insight="1"]{ --card-a1:#ff2bd6; --card-a2:#26e6ff; }
@@ -182,6 +207,39 @@
     .quest-modal-content h2{ margin:0; font-weight: 950; letter-spacing:.06em; text-transform: uppercase; }
     .quest-modal-content p{ margin:10px 0 0; color: var(--muted); line-height: 1.55; }
     .quest-actions{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; justify-content:flex-end; }
+
+    .quest-notes{
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(0,0,0,.10);
+    }
+    .quest-notes .noteRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+    .quest-notes textarea{
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      color: #fff;
+      padding: 10px 12px;
+      font: inherit;
+      line-height: 1.4;
+      resize: vertical;
+      min-height: 86px;
+      outline: none;
+    }
+    .quest-notes textarea:focus{
+      border-color: rgba(255,255,255,.24);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+    }
 
     /* Quest banner: animated sigil + scene setting */
     .quest-banner{
@@ -539,6 +597,135 @@
       border-color: #5cff9a;
       box-shadow: 0 0 26px rgba(92,255,154,0.8);
     }
+
+    /* Gate 2 — Worldview Lens (rotate fragments) */
+    .qlensWrap{ margin-top: 10px; }
+    .qlens{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+      max-width: 360px;
+    }
+    .lensPiece{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color: #fff;
+      cursor: pointer;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .12s ease, border-color .2s ease, box-shadow .2s ease;
+      touch-action: manipulation;
+    }
+    .lensPiece::before{
+      content:"";
+      position:absolute; inset:-25%;
+      background:
+        radial-gradient(220px 220px at 25% 20%, color-mix(in oklab, var(--scene-a1) 20%, transparent), transparent 64%),
+        radial-gradient(220px 220px at 78% 80%, color-mix(in oklab, var(--scene-a2) 18%, transparent), transparent 66%);
+      opacity:.70;
+      pointer-events:none;
+      transform: translate3d(0,0,0);
+    }
+    .lensPiece:active{ transform: scale(.98); }
+    .lensPiece .frag{
+      width: 100%;
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transform: rotate(calc(var(--base, 0deg) + var(--rot, 0deg)));
+      transition: transform .18s ease;
+      position: relative;
+      z-index: 1;
+      opacity: .95;
+    }
+    .lensPiece svg{ width: 76%; height: 76%; }
+    .lensPiece.solved{
+      border-color: color-mix(in oklab, var(--scene-a2) 42%, rgba(255,255,255,.18));
+      box-shadow: 0 0 26px color-mix(in oklab, var(--scene-a1) 18%, transparent);
+    }
+
+    /* Gate 4 — Control Pattern (tap anomaly) */
+    .qpatternMeta .qprogress{ flex:1; min-width: 180px; }
+    .qpattern{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+      max-width: 420px;
+    }
+    .qnode{
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.14);
+      cursor: pointer;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .12s ease, border-color .2s ease, box-shadow .2s ease;
+      touch-action: manipulation;
+    }
+    .qnode::before{
+      content:"";
+      position:absolute; inset:-30%;
+      background:
+        radial-gradient(180px 180px at 30% 20%, rgba(255,255,255,.05), transparent 62%),
+        radial-gradient(180px 180px at 80% 78%, rgba(255,255,255,.04), transparent 66%);
+      opacity:.85;
+      pointer-events:none;
+      transform: translate3d(0,0,0);
+    }
+    .qnode .dot{
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: rgba(255,255,255,.20);
+      box-shadow: 0 0 18px rgba(255,255,255,.10);
+    }
+    .qnode:active{ transform: scale(.985); }
+    .qnode.hot{
+      border-color: color-mix(in oklab, var(--scene-a2) 44%, rgba(255,255,255,.18));
+      box-shadow: 0 0 30px color-mix(in oklab, var(--scene-a1) 18%, transparent);
+      transform: translateY(-1px);
+    }
+    .qnode.hot .dot{
+      background: linear-gradient(90deg, var(--scene-a1), var(--scene-a2));
+      box-shadow: 0 0 26px color-mix(in oklab, var(--scene-a2) 20%, transparent);
+    }
+    #drainFill{
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, color-mix(in oklab, var(--scene-a1) 70%, #fff), color-mix(in oklab, var(--scene-a2) 70%, #fff));
+      box-shadow: 0 0 16px rgba(255,255,255,.10);
+    }
+
+    /* Gate 8 — Uplift (choose a message) */
+    .qmsgGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    @media (min-width: 560px){
+      .qmsgGrid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .qbtn.qmsg{
+      justify-content:flex-start;
+      text-align:left;
+      white-space: normal;
+      line-height: 1.25;
+      padding: 10px 12px;
+      min-height: 52px;
+    }
 </style>
 </head>
 
@@ -567,6 +754,10 @@
       <div class="heroTitle">The Nine Signals</div>
       <p class="subTitle">Tap an Insight to open its mini-quest. Complete it to unlock that Signal and jump into the matching track. Your constellation builds in the sky as you go.</p>
       <div class="pill" id="constellationPill" style="margin: 10px auto 0; display: inline-flex" aria-live="polite">Constellation: 0/9</div>
+      <div class="heroActions">
+        <button class="btn primary" id="continueBtn" type="button">Continue Journey</button>
+      </div>
+      <div class="small" id="nextHint" aria-live="polite" style="margin-top:8px"></div>
     </div>
 
     <section class="layout">
@@ -717,14 +908,23 @@
       </div>
       <div id="questStage" class="quest-stage" aria-label="Mini-quest interaction area"></div>
       <div id="questStatus" class="quest-status" role="status" aria-live="polite"></div>
+      <div class="quest-notes" id="questNotesWrap" aria-label="Reflection notes">
+        <div class="noteRow">
+          <div class="qchip">Reflection (local)</div>
+          <button class="btn" id="questNoteClear" type="button" title="Clear your reflection for this Signal">Clear</button>
+        </div>
+        <textarea id="questNotes" rows="3" placeholder="What did you notice?"></textarea>
+        <div class="small" id="questNoteStatus">Saved on this device.</div>
+      </div>
       <div class="quest-actions">
         <button class="btn" id="questReset" type="button" style="display:none" title="Reset this challenge">Reset</button>
         <button class="btn" id="questComplete" type="button">Complete Quest</button>
+        <button class="btn" id="questNext" type="button" style="display:none" title="Open the next Signal">Next Signal</button>
         <button class="btn primary" id="questGo" type="button" style="display:none">Go to Track</button>
       </div>
     </div>
   </div>
 
-  <script src="./adventure.js?v=20260204-08"></script>
+  <script src="./adventure.js?v=20260204-12"></script>
 </body>
 </html>

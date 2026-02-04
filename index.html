@@ -12,13 +12,13 @@
   <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-08">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-12">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=20260204-08">
+  <link rel="stylesheet" href="./styles.css?v=20260204-12">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
   <title>EchoVerse • Love Without Cords</title>
@@ -55,26 +55,66 @@
       }
     })();
   </script>
-  <script defer src="./pwa.js?v=20260204-08"></script>
+  <script defer src="./pwa.js?v=20260204-12"></script>
 </head>
 
-<body data-theme="anti">
+<body data-theme="anti" class="page-player">
   <div class="topbar">
     <div class="topbar-inner">
       <div class="brand">
         <div class="kicker">EchoVerse • AeroVista</div>
-        <div class="title">Love Without Cords</div>
+        <div class="title title-svg">
+          <svg class="brand-logo" viewBox="0 0 780 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Love Without Cords" preserveAspectRatio="xMinYMid meet">
+            <defs>
+              <linearGradient id="evBrandGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="var(--track-a1)"/>
+                <stop offset="0.55" stop-color="var(--accent3)"/>
+                <stop offset="1" stop-color="var(--track-a2)"/>
+              </linearGradient>
+              <filter id="evBrandGlow" x="-30%" y="-80%" width="160%" height="240%">
+                <feGaussianBlur stdDeviation="2" result="b"/>
+                <feColorMatrix in="b" type="matrix"
+                  values="1 0 0 0 0
+                          0 1 0 0 0
+                          0 0 1 0 0
+                          0 0 0 .55 0" result="g"/>
+                <feMerge>
+                  <feMergeNode in="g"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <g filter="url(#evBrandGlow)">
+              <path class="ev-heart" d="M24 44 C11 35 8 28 8 21 C8 15 13 11 19 11 C21.9 11 24 12.6 24 12.6 C24 12.6 26.1 11 29 11 C35 11 40 15 40 21 C40 28 37 35 24 44 Z" fill="url(#evBrandGrad)"/>
+              <path class="ev-heart-outline" d="M24 44 C11 35 8 28 8 21 C8 15 13 11 19 11 C21.9 11 24 12.6 24 12.6 C24 12.6 26.1 11 29 11 C35 11 40 15 40 21 C40 28 37 35 24 44 Z" fill="none" stroke="url(#evBrandGrad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+              <circle class="ev-spark s1" cx="16" cy="10" r="2.2" fill="url(#evBrandGrad)"/>
+              <circle class="ev-spark s2" cx="38" cy="14" r="1.7" fill="url(#evBrandGrad)"/>
+              <circle class="ev-spark s3" cx="12" cy="28" r="1.4" fill="url(#evBrandGrad)"/>
+
+              <text class="ev-title-fill" x="54" y="39">Love Without Cords</text>
+              <text class="ev-title-stroke" x="54" y="39">Love Without Cords</text>
+            </g>
+          </svg>
+        </div>
       </div>
       <div class="controls">
         <button class="btn badge primary" id="themeBtn" title="Toggle theme">
           <span class="dot"></span>
           <span id="themeLabel">Anti-Love</span>
         </button>
-        <button class="btn" id="installBtn" type="button">Install</button>
-        <button class="btn" id="lyricsBtn">Lyrics</button>
-        <button class="btn" id="chatBtn">Chat</button>
-        <button class="btn" id="aboutBtn" type="button">About</button>
-        <a href="./adventure.html" class="btn" id="adventureBtn">Adventure</a>
+        <button class="btn" id="menuBtn" type="button" aria-controls="menuDrawer" aria-expanded="false" title="Menu">
+          <span class="sr-only">Menu</span>
+          <svg class="icon" width="18" height="18" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="btn nav-item" id="installBtn" type="button">Install</button>
+        <button class="btn nav-item" id="lyricsBtn">Lyrics</button>
+        <button class="btn nav-item" id="chatBtn">Chat</button>
+        <button class="btn nav-item" id="aboutBtn" type="button">About</button>
+        <a href="./adventure.html" class="btn nav-item" id="adventureBtn">Adventure</a>
       </div>
     </div>
   </div>
@@ -90,7 +130,6 @@
             <div class="desc" id="albumDesc"></div>
             <div class="desc" id="bootError" style="display:none;color:var(--accent3)"></div>
           </div>
-          <div class="pill" id="albumTag">Valentine’s Day Drop • Love Without Cords</div>
         </div>
 
         <div class="hero">
@@ -152,6 +191,27 @@
   </div>
 
   <!-- Drawers -->
+  <div class="drawer" id="menuDrawer" aria-hidden="true">
+    <div class="sheet sheet-side" role="dialog" aria-modal="true" aria-labelledby="menuTitle" tabindex="-1">
+      <div class="shd">
+        <div class="ttl" id="menuTitle">Menu</div>
+        <button class="btn" data-close="menuDrawer" type="button">Close</button>
+      </div>
+
+      <div class="section" style="margin-bottom:10px">
+        <h3>Navigate</h3>
+        <div class="menu-grid">
+          <button class="btn" id="menuInstall" type="button">Install</button>
+          <button class="btn" id="menuLyrics" type="button">Lyrics</button>
+          <button class="btn" id="menuChat" type="button">Chat</button>
+          <button class="btn" id="menuAbout" type="button">About</button>
+          <button class="btn primary" id="menuAdventure" type="button">Adventure</button>
+        </div>
+        <p class="small" style="margin-top:10px">Tip: Adventure opens as an overlay so the music keeps playing.</p>
+      </div>
+    </div>
+  </div>
+
   <div class="drawer" id="lyricsDrawer" aria-hidden="true">
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lyricsTitle" tabindex="-1">
       <div class="shd">
@@ -324,7 +384,7 @@
       const frame = $("adventureFrame");
       if (!frame) return;
       if (adventureFrameLoaded) return;
-      frame.src = "./adventure.html?embed=1&v=20260204-08";
+      frame.src = "./adventure.html?embed=1&v=20260204-12";
       adventureFrameLoaded = true;
     }
 
@@ -730,6 +790,7 @@
       $("installBtn")?.addEventListener("click", () => {
         try { window.dispatchEvent(new Event("ev:install_request")); } catch {}
       });
+      $("menuBtn")?.addEventListener("click", () => openDrawer("menuDrawer"));
       $("lyricsBtn").onclick = () => openDrawer("lyricsDrawer");
       $("chatBtn").onclick = () => { openDrawer("chatDrawer"); ensureGiscusLoaded(); };
       $("aboutBtn")?.addEventListener("click", () => openDrawer("aboutDrawer"));
@@ -742,6 +803,16 @@
         openDrawer("adventureDrawer");
         ensureAdventureFrameLoaded();
       });
+
+      // Hamburger menu (small screens)
+      $("menuInstall")?.addEventListener("click", () => {
+        closeDrawer("menuDrawer");
+        try { window.dispatchEvent(new Event("ev:install_request")); } catch {}
+      });
+      $("menuLyrics")?.addEventListener("click", () => { closeDrawer("menuDrawer"); $("lyricsBtn")?.click?.(); });
+      $("menuChat")?.addEventListener("click", () => { closeDrawer("menuDrawer"); $("chatBtn")?.click?.(); });
+      $("menuAbout")?.addEventListener("click", () => { closeDrawer("menuDrawer"); $("aboutBtn")?.click?.(); });
+      $("menuAdventure")?.addEventListener("click", () => { closeDrawer("menuDrawer"); $("adventureBtn")?.click?.(); });
 
       document.querySelectorAll("[data-close]").forEach(b=>{
         b.onclick = () => closeDrawer(b.getAttribute("data-close"));
@@ -975,6 +1046,7 @@
       lastFocus = document.activeElement;
       d.classList.add("open");
       d.setAttribute("aria-hidden","false");
+      if (id === "menuDrawer") $("menuBtn")?.setAttribute("aria-expanded", "true");
       const sheet = d.querySelector(".sheet");
       requestAnimationFrame(() => {
         const closeBtn = d.querySelector("[data-close]");
@@ -986,6 +1058,7 @@
       const d = $(id);
       d.classList.remove("open");
       d.setAttribute("aria-hidden","true");
+      if (id === "menuDrawer") $("menuBtn")?.setAttribute("aria-expanded", "false");
       if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
       lastFocus = null;
       umamiTrack("drawer_close", { ...ctx(), drawer: id });

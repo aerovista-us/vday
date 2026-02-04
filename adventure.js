@@ -115,7 +115,9 @@
   }, { passive: true });
 
   // ---- Quest Modal ----
+  const TOTAL_INSIGHTS = 9;
   const PROG_KEY = "echoverseProgress";
+  const NOTES_KEY = "echoverseNotes_v1";
   const modal = $("#questModal");
   const qTitle = $("#questTitle");
   const qDesc = $("#questDesc");
@@ -124,37 +126,66 @@
   const qClose = $("#questClose");
   const qReset = $("#questReset");
   const qComplete = $("#questComplete");
+  const qNext = $("#questNext");
   const qGo = $("#questGo");
   const qBanner = $("#questBanner");
   const qSigil = $("#questSigil");
   const qKicker = $("#questKicker");
   const qSceneText = $("#questSceneText");
+  const qNotes = $("#questNotes");
+  const qNoteStatus = $("#questNoteStatus");
+  const qNoteClear = $("#questNoteClear");
+
+  const continueBtn = $("#continueBtn");
+  const nextHint = $("#nextHint");
 
   const sceneFx = { a1: "", a2: "" };
 
   let activeInsight = null;
   let cleanupQuest = null;
   let lastFocus = null;
+  let notes = (() => {
+    try {
+      const raw = localStorage.getItem(NOTES_KEY);
+      const obj = JSON.parse(raw || "{}");
+      if (!obj || typeof obj !== "object") return {};
+      const out = {};
+      for (const k of Object.keys(obj)){
+        const v = obj[k];
+        if (typeof v === "string") out[String(k)] = v;
+        else if (v && typeof v.text === "string") out[String(k)] = v.text;
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  })();
+  let noteSaveTimer = 0;
 
   function openModal(){
     if (!modal) return;
-    lastFocus = document.activeElement;
+    const wasOpen = modal.classList.contains("open");
+    if (!wasOpen) lastFocus = document.activeElement;
     document.documentElement.classList.add("ev-modal-open");
     document.body.classList.add("ev-modal-open");
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
-    requestAnimationFrame(() => {
-      const target = qClose || modal.querySelector("[role='dialog']") || modal;
-      target?.focus?.();
-    });
+    if (!wasOpen){
+      requestAnimationFrame(() => {
+        const target = qClose || modal.querySelector("[role='dialog']") || modal;
+        target?.focus?.();
+      });
+    }
   }
   function closeModal(){
     if (!modal) return;
+    flushNoteDebounce();
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.documentElement.classList.remove("ev-modal-open");
     document.body.classList.remove("ev-modal-open");
     clearStage();
+    activeInsight = null;
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
     lastFocus = null;
   }
@@ -175,8 +206,141 @@
     cleanupQuest = null;
     if (qStage) qStage.innerHTML = "";
     setStatus("");
+    if (qComplete) {
+      qComplete.textContent = "Complete Quest";
+      qComplete.style.display = "";
+    }
     setCompleteEnabled(false);
     if (qReset) qReset.style.display = "none";
+    if (qNext) qNext.style.display = "none";
+  }
+
+  function activeId(){
+    try { return String(activeInsight?.dataset?.insight || ""); }
+    catch { return ""; }
+  }
+
+  function persistNotes(){
+    try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch {}
+  }
+
+  function ensureNoteBadge(card){
+    if (!card) return;
+    if (card.querySelector(".noteBadge")) return;
+    const el = document.createElement("div");
+    el.className = "noteBadge";
+    el.textContent = "📝";
+    el.setAttribute("aria-hidden", "true");
+    card.appendChild(el);
+  }
+
+  function refreshNoteBadges(){
+    $$(".insight").forEach(card=>{
+      ensureNoteBadge(card);
+      const id = String(card.dataset.insight || "");
+      const text = String(notes[id] || "");
+      const has = text.trim().length > 0;
+      card.classList.toggle("has-note", has);
+      if (has){
+        const snippet = text.trim().replace(/\s+/g, " ");
+        card.title = snippet.length > 110 ? (snippet.slice(0, 110) + "…") : snippet;
+      } else if (card.title) {
+        card.title = "";
+      }
+    });
+  }
+
+  function notePrompt(id){
+    const q = QUESTS[String(id)] || {};
+    return String(q.prompt || "What did you notice?");
+  }
+
+  function loadNoteUI(){
+    if (!qNotes) return;
+    const id = activeId();
+    if (!id) return;
+    qNotes.placeholder = notePrompt(id);
+    const val = String(notes[id] || "");
+    qNotes.value = val;
+    if (qNoteStatus) qNoteStatus.textContent = val.trim() ? "Saved on this device." : "Optional. Saved on this device.";
+  }
+
+  function saveNoteNow(){
+    if (!qNotes) return;
+    const id = activeId();
+    if (!id) return;
+    const text = String(qNotes.value || "").slice(0, 1400);
+    const trimmed = text.trim();
+    if (trimmed) notes[id] = text;
+    else delete notes[id];
+    persistNotes();
+    refreshNoteBadges();
+    if (qNoteStatus) qNoteStatus.textContent = trimmed ? "Saved on this device." : "Cleared.";
+  }
+
+  function scheduleNoteSave(){
+    if (!qNotes) return;
+    if (noteSaveTimer) { try { clearTimeout(noteSaveTimer); } catch {} }
+    if (qNoteStatus) qNoteStatus.textContent = "Saving…";
+    noteSaveTimer = setTimeout(() => {
+      noteSaveTimer = 0;
+      saveNoteNow();
+    }, 260);
+  }
+
+  function flushNoteDebounce(){
+    if (!noteSaveTimer) return;
+    try { clearTimeout(noteSaveTimer); } catch {}
+    noteSaveTimer = 0;
+    saveNoteNow();
+  }
+
+  function getNextLockedId(){
+    for (let i = 1; i <= TOTAL_INSIGHTS; i++){
+      const card = $(`.insight[data-insight="${i}"]`);
+      if (!card) continue;
+      if (!card.classList.contains("unlocked")) return String(i);
+    }
+    return "";
+  }
+
+  function updateNextUp(){
+    const nextId = getNextLockedId();
+    $$(".insight").forEach(card=>{
+      const id = String(card.dataset.insight || "");
+      card.classList.toggle("next-up", !!nextId && id === nextId);
+    });
+
+    if (continueBtn){
+      if (nextId){
+        continueBtn.disabled = false;
+        continueBtn.textContent = "Continue Journey";
+      } else {
+        continueBtn.disabled = true;
+        continueBtn.textContent = "Journey Complete";
+      }
+    }
+
+    if (nextHint){
+      if (nextId){
+        const card = $(`.insight[data-insight="${nextId}"]`);
+        const name = $(".iname", card)?.textContent?.trim() || `Signal ${nextId}`;
+        nextHint.textContent = `Next up: ${name}`;
+      } else {
+        nextHint.textContent = "Constellation complete. Replay any Signal or reset to begin again.";
+      }
+    }
+  }
+
+  function updateModalNext(){
+    if (!qNext) return;
+    if (!modal || !modal.classList.contains("open")) { qNext.style.display = "none"; return; }
+    const curId = activeId();
+    const curUnlocked = !!curId && activeInsight?.classList.contains("unlocked");
+    if (!curUnlocked) { qNext.style.display = "none"; return; }
+    const nextId = getNextLockedId();
+    if (!nextId || nextId === curId) { qNext.style.display = "none"; return; }
+    qNext.style.display = "inline-flex";
   }
 
   const clamp = (v,a,b)=> Math.max(a, Math.min(b,v));
@@ -197,6 +361,7 @@
     "1": {
       kicker: "Awakening Signal",
       scene: "Three sparks want alignment. Find the first stable shape and the field stops wobbling.",
+      prompt: "What shifted when the first shape settled?",
       a1: "#ff2bd6",
       a2: "#26e6ff",
       paths: [
@@ -205,40 +370,44 @@
       ]
     },
     "2": {
-      kicker: "Signal Lock",
-      scene: "Inside the static, a clean tone appears. Tune to it—then hold steady until it locks.",
+      kicker: "Worldview Signal",
+      scene: "Old maps break. Rotate the fragments until the lens becomes one clear circle.",
+      prompt: "What old map are you releasing?",
       a1: "#26e6ff",
       a2: "#ffffff",
+      paths: [
+        { d: "M60 34 A26 26 0 1 1 59.9 34", delay: 0.0, width: 3.8, opacity: 0.9 },
+        { d: "M60 34 L60 86", delay: 0.12, width: 3.2, opacity: 0.85 },
+        { d: "M34 60 L86 60", delay: 0.22, width: 3.2, opacity: 0.85 }
+      ]
+    },
+    "3": {
+      kicker: "Energy Field Signal",
+      scene: "Reality is living field. Tune the frequency until the aura stabilizes—then hold steady as it locks.",
+      prompt: "Where do you feel the energy field most clearly right now?",
+      a1: "#ffcc66",
+      a2: "#ff2bd6",
       paths: [
         { d: "M24 62 C34 44 46 80 60 62 C74 44 86 80 96 62", delay: 0.0, width: 4.0 },
         { d: "M24 72 C34 54 46 90 60 72 C74 54 86 90 96 72", delay: 0.10, width: 3.2 }
       ]
     },
-    "3": {
-      kicker: "Cut the Cord",
-      scene: "A cord tugs for reaction. Cut clean—no receipts, no rope—just freedom.",
-      a1: "#ffcc66",
-      a2: "#ff2bd6",
-      paths: [
-        { d: "M38 38 L82 82", delay: 0.0, width: 4.4 },
-        { d: "M82 38 L38 82", delay: 0.08, width: 4.4 },
-        { d: "M34 60 L86 60", delay: 0.18, width: 2.8, opacity: 0.8 }
-      ]
-    },
     "4": {
-      kicker: "Green Battery",
-      scene: "Charge from within. Hold until full—then release without losing it.",
+      kicker: "Control Pattern Signal",
+      scene: "A hook tries to drain your attention. Break the pattern before it drains you.",
+      prompt: "What control pattern hooks you most often?",
       a1: "#6bffb0",
       a2: "#26e6ff",
       paths: [
-        { d: "M46 40 H74 V84 H46 Z", delay: 0.0, width: 3.9 },
-        { d: "M52 34 H68", delay: 0.12, width: 3.9 },
-        { d: "M60 46 L52 64 H63 L56 82", delay: 0.20, width: 3.6 }
+        { d: "M44 44 H76 V76 H44 Z", delay: 0.0, width: 3.8 },
+        { d: "M44 60 H76", delay: 0.12, width: 3.2, opacity: 0.85 },
+        { d: "M60 44 V76", delay: 0.22, width: 3.2, opacity: 0.85 }
       ]
     },
     "5": {
-      kicker: "Focus = Fire",
-      scene: "Ignite the spark. Stay inside the ring until attention becomes heat—and heat becomes direction.",
+      kicker: "Inner Connection Signal",
+      scene: "Power returns when you reconnect inside. Hold to kindle the green ember—steady and clean.",
+      prompt: "What clean source recharges you fastest?",
       a1: "#ff7a18",
       a2: "#ffcc66",
       paths: [
@@ -247,28 +416,32 @@
       ]
     },
     "6": {
-      kicker: "Observer Mode",
-      scene: "Hold still long enough to see the pattern without becoming it. Clarity arrives quietly.",
+      kicker: "Clearing Signal",
+      scene: "Old cords keep the field heavy. Cut clean. Let the ropes fall away.",
+      prompt: "What cord are you cutting clean today?",
       a1: "#ffcc66",
       a2: "#2b6bff",
       paths: [
-        { d: "M26 60 C36 42 84 42 94 60 C84 78 36 78 26 60 Z", delay: 0.0, width: 3.9 },
-        { d: "M60 52 A8 8 0 1 0 60 68 A8 8 0 1 0 60 52", delay: 0.12, width: 3.6 }
+        { d: "M38 38 L82 82", delay: 0.0, width: 4.4 },
+        { d: "M82 38 L38 82", delay: 0.08, width: 4.4 },
+        { d: "M34 60 L86 60", delay: 0.18, width: 2.8, opacity: 0.8 }
       ]
     },
     "7": {
-      kicker: "Co‑Creator",
-      scene: "Two currents meet. Match values, then merge—clean exchange, no control, all momentum.",
+      kicker: "Synchronicity Signal",
+      scene: "Intent makes the path light itself. Follow signs slowly—don’t chase.",
+      prompt: "What sign keeps repeating lately?",
       a1: "#ff4fd8",
       a2: "#7dffdf",
       paths: [
-        { d: "M34 60 C34 48 48 48 60 60 C72 72 86 72 86 60 C86 48 72 48 60 60 C48 72 34 72 34 60 Z", delay: 0.0, width: 3.7 },
-        { d: "M60 46 V74", delay: 0.12, width: 3.0, opacity: 0.85 }
+        { d: "M60 32 L66 50 L84 50 L69 61 L74 78 L60 68 L46 78 L51 61 L36 50 L54 50 Z", delay: 0.0, width: 3.6, opacity: 0.95 },
+        { d: "M34 74 C46 60 52 90 60 74 C68 60 74 90 86 74", delay: 0.14, width: 3.0, opacity: 0.85 }
       ]
     },
     "8": {
-      kicker: "Compassion Signal",
-      scene: "Pick a bright intention. Seal it—then carry it like a lantern into the next moment.",
+      kicker: "Uplift Signal",
+      scene: "Lifting others lifts you too. Choose a message that brightens a stranger—then send it clean.",
+      prompt: "Who could use a small uplift right now?",
       a1: "#7dffdf",
       a2: "#ffcc66",
       paths: [
@@ -277,8 +450,9 @@
       ]
     },
     "9": {
-      kicker: "Final Glyph",
-      scene: "The pattern returns. Watch it, then repeat it—one clean step at a time.",
+      kicker: "Co‑Creation Signal",
+      scene: "The future forms through synchronized attention. Watch the glyph, then assemble it—one clean step at a time.",
+      prompt: "What would you build with clean exchange?",
       a1: "#26e6ff",
       a2: "#ff2bd6",
       paths: [
@@ -573,6 +747,87 @@
     };
   }
 
+  function buildLensRotateQuest(){
+    if (!qStage) return ()=>{};
+    const base = [0, -90, 90, 180];
+    const pickTurn = ()=> [0, 90, 180, 270][Math.floor(Math.random() * 4)];
+    const rots = [0, 1, 2, 3].map(() => pickTurn());
+    if (rots.every(r => r === 0)) rots[0] = 90;
+
+    qStage.innerHTML = `
+      <div class="qhelp">Rebuild the lens. Tap a fragment to rotate it until all edges align.</div>
+      <div class="qlensWrap">
+        <div class="qlens" id="lensGrid" aria-label="Lens fragments"></div>
+        <div class="qrow" style="margin-top:10px; justify-content:space-between; align-items:center">
+          <span class="qchip">Aligned: <span id="aligned" class="mono">0</span>/4</span>
+          <span class="qchip">Tap to rotate</span>
+        </div>
+      </div>
+    `;
+
+    const grid = $("#lensGrid", qStage);
+    const alignedEl = $("#aligned", qStage);
+    if (!grid) return ()=>{};
+
+    const pieceSvg = `
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M80 0 A80 80 0 0 0 0 80" fill="none" stroke="currentColor" stroke-width="6" opacity=".62" stroke-linecap="round"/>
+        <path d="M28 28 L90 90" fill="none" stroke="currentColor" stroke-width="4" opacity=".85" stroke-linecap="round"/>
+        <circle cx="30" cy="30" r="3.5" fill="currentColor" opacity=".78"/>
+      </svg>
+    `;
+
+    const pieces = rots.map((rot, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "lensPiece";
+      btn.setAttribute("aria-label", `Rotate fragment ${i + 1}`);
+      btn.dataset.i = String(i);
+      btn.style.setProperty("--base", `${base[i]}deg`);
+      btn.style.setProperty("--rot", `${rot}deg`);
+      btn.innerHTML = `<span class="frag" aria-hidden="true">${pieceSvg}</span>`;
+      grid.appendChild(btn);
+      return btn;
+    });
+
+    const norm = (deg) => {
+      const n = ((deg % 360) + 360) % 360;
+      const snapped = Math.round(n / 90) * 90;
+      return ((snapped % 360) + 360) % 360;
+    };
+    const getRot = (el) => {
+      const v = String(el.style.getPropertyValue("--rot") || "0").trim().replace("deg", "");
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const setRot = (el, deg) => el.style.setProperty("--rot", `${norm(deg)}deg`);
+
+    function render(){
+      const aligned = pieces.filter(p => norm(getRot(p)) === 0).length;
+      if (alignedEl) alignedEl.textContent = String(aligned);
+      if (aligned >= 4){
+        pieces.forEach(p => p.classList.add("solved"));
+        setStatus("Lens rebuilt. A wider view appears. Tap Complete to unlock.");
+        setCompleteEnabled(true);
+      } else {
+        pieces.forEach(p => p.classList.remove("solved"));
+        setStatus("Rotate fragments until the lens aligns.");
+        setCompleteEnabled(false);
+      }
+    }
+
+    function onRotate(e){
+      const btn = e.currentTarget;
+      setRot(btn, getRot(btn) + 90);
+      stageBurstAt(e.clientX, e.clientY);
+      render();
+    }
+    pieces.forEach(p => p.addEventListener("click", onRotate));
+
+    render();
+    return ()=> { pieces.forEach(p => p.removeEventListener("click", onRotate)); };
+  }
+
 function buildTriangleQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `<div class="qhelp">Drag the three sparks onto the three target nodes to form a triangle.</div>`;
@@ -707,7 +962,7 @@ function buildTriangleQuest(){
     let hold=0, raf=0, last=0;
 
     qStage.innerHTML = `
-      <div class="qhelp">Inside the static, a clean tone appears. Tune the dial until the signal locks—hold steady for 1 second.</div>
+      <div class="qhelp">Reality is living field. Tune the dial until the aura stabilizes—hold steady for 1 second.</div>
       <div class="qdial">
         <div class="qchip">Target: <span class="mono">${target}</span> Hz</div>
         <input id="dial" type="range" min="40" max="110" value="70" />
@@ -737,6 +992,127 @@ function buildTriangleQuest(){
     }
     raf = requestAnimationFrame(step);
     return ()=> { if (raf) cancelAnimationFrame(raf); };
+  }
+
+  function buildPatternBreakQuest(){
+    if (!qStage) return ()=>{};
+    const goal = 3;
+    let hits = 0;
+    let drain = 1;
+    let hot = -1;
+    let running = true;
+    let beatTimer = 0;
+
+    qStage.innerHTML = `
+      <div class="qhelp">A hook tries to drain your attention. Tap the anomaly before it moves. Break the pattern three times.</div>
+      <div class="qrow qpatternMeta" style="margin-top:10px; align-items:center">
+        <div class="qprogress qdrain" aria-label="Drain meter"><div id="drainFill"></div></div>
+        <span class="qchip">Breaks: <span id="hits" class="mono">0</span>/${goal}</span>
+      </div>
+      <div class="qpattern" id="patternGrid" role="group" aria-label="Control pattern grid"></div>
+    `;
+
+    const fill = $("#drainFill", qStage);
+    const hitsEl = $("#hits", qStage);
+    const grid = $("#patternGrid", qStage);
+    if (!grid) return ()=>{};
+
+    const nodes = Array.from({ length: 9 }).map((_, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "qnode";
+      b.dataset.i = String(i);
+      b.setAttribute("aria-label", `Node ${i + 1}`);
+      b.innerHTML = `<span class="dot" aria-hidden="true"></span>`;
+      grid.appendChild(b);
+      return b;
+    });
+
+    function updateUI(){
+      if (fill) fill.style.width = Math.round(drain * 100) + "%";
+      if (hitsEl) hitsEl.textContent = String(hits);
+    }
+
+    function setHot(next){
+      hot = next;
+      nodes.forEach((n, i) => n.classList.toggle("hot", i === hot));
+    }
+
+    function pickHot(){
+      let next = hot;
+      while (next === hot) next = Math.floor(Math.random() * nodes.length);
+      setHot(next);
+    }
+
+    function nextBeat(){
+      if (!running) return;
+      pickHot();
+      beatTimer = setTimeout(() => {
+        if (!running) return;
+        // missed the anomaly
+        drain = Math.max(0, drain - 0.22);
+        if (drain <= 0){
+          hits = 0;
+          drain = 1;
+          setStatus("Reset. Breathe. Break the pattern without feeding it.");
+        } else {
+          setStatus("Don’t chase—wait, then act clean.");
+        }
+        updateUI();
+        setCompleteEnabled(false);
+        nextBeat();
+      }, 950);
+    }
+
+    function complete(){
+      running = false;
+      try { clearTimeout(beatTimer); } catch {}
+      setHot(-1);
+      setStatus("Pattern broken. You keep your power. Tap Complete to unlock.");
+      setCompleteEnabled(true);
+    }
+
+    function onTap(e){
+      const i = Number(e.currentTarget.dataset.i);
+      if (!running) return;
+
+      if (i === hot){
+        try { clearTimeout(beatTimer); } catch {}
+        hits = Math.min(goal, hits + 1);
+        drain = Math.min(1, drain + 0.18);
+        stageBurstAt(e.clientX, e.clientY);
+        updateUI();
+
+        if (hits >= goal){
+          complete();
+          return;
+        }
+
+        setStatus("Good. Break it again.");
+        setCompleteEnabled(false);
+        nextBeat();
+        return;
+      }
+
+      // wrong node
+      drain = Math.max(0, drain - 0.14);
+      hits = Math.max(0, hits - 1);
+      setStatus("That’s the hook. Exit clean.");
+      setCompleteEnabled(false);
+      updateUI();
+    }
+
+    nodes.forEach(n => n.addEventListener("click", onTap));
+    updateUI();
+    setStatus("Tap the anomaly before it moves.");
+    setCompleteEnabled(false);
+    nextBeat();
+
+    return ()=> {
+      running = false;
+      try { clearTimeout(beatTimer); } catch {}
+      nodes.forEach(n => n.removeEventListener("click", onTap));
+    };
   }
 
   function buildSwipeCutQuest(){
@@ -887,10 +1263,10 @@ function buildTriangleQuest(){
   function buildHoldChargeQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Charge from within. Press and hold to reach 100%. Releasing early resets—steady hands.</div>
+      <div class="qhelp">Power returns when you reconnect inside. Press and hold to ignite the green ember. Releasing early resets—steady hands.</div>
       <div class="qrow" style="margin-top:10px">
-        <button class="qbtn primary" id="holdBtn" type="button">Hold to Charge</button>
-        <span class="qchip">Charge: <span id="pct" class="mono">0</span>%</span>
+        <button class="qbtn primary" id="holdBtn" type="button">Hold to Ignite</button>
+        <span class="qchip">Ember: <span id="pct" class="mono">0</span>%</span>
       </div>
       <div class="qprogress" style="margin-top:10px"><div id="fill"></div></div>
     `;
@@ -917,14 +1293,14 @@ function buildTriangleQuest(){
         holding = false;
         btn.classList.remove("active");
         btn.disabled = true;
-        btn.textContent = "Charged";
-        setStatus("Fully charged. You generate clean energy. Tap Complete to unlock.");
+        btn.textContent = "Lit";
+        setStatus("Ember lit. Your field stabilizes from the inside. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else if (complete){
-        setStatus("Fully charged. Tap Complete to unlock.");
+        setStatus("Ember lit. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
-        setStatus(holding ? "Charging…" : "Press and hold to charge.");
+        setStatus(holding ? "Igniting…" : "Press and hold to ignite.");
         setCompleteEnabled(false);
       }
       raf=requestAnimationFrame(step);
@@ -945,7 +1321,7 @@ function buildTriangleQuest(){
     btn.addEventListener("pointerleave", ()=>{ if (holding) stop(); });
 
     raf=requestAnimationFrame(step);
-    setStatus("Press and hold to charge. Once full, you can release and tap Complete.");
+    setStatus("Press and hold to ignite. Once lit, you can release and tap Complete.");
     setCompleteEnabled(false);
 
     return ()=>{ if (raf) cancelAnimationFrame(raf); };
@@ -954,7 +1330,7 @@ function buildTriangleQuest(){
   function buildFocusRingQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Strike the spark. Ignite the match, then keep your pointer inside the ring for 3 seconds.</div>
+      <div class="qhelp">A sign flickers. Ignite it, then keep your touch inside the ring for 3 seconds. Don’t chase—stay steady.</div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn primary" id="ignite" type="button">Ignite</button>
         <span class="qchip">Focus: <span id="sec" class="mono">0.0</span>s / 3.0s</span>
@@ -1019,10 +1395,10 @@ function buildTriangleQuest(){
 
       if (hold>=3){
         complete = true;
-        setStatus("Focus achieved. Fire becomes direction. Tap Complete to unlock.");
+        setStatus("Sign held. The path clarifies. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
-        setStatus(!armed ? "Ignite first." : (inside ? "Hold focus…" : "Stay inside the ring."));
+        setStatus(!armed ? "Ignite the sign first." : (inside ? "Hold steady…" : "Stay inside the ring."));
         setCompleteEnabled(false);
       }
       raf=requestAnimationFrame(step);
@@ -1139,72 +1515,98 @@ function buildTriangleQuest(){
     return ()=>{};
   }
 
-  function buildIntentionQuest(){
+  function buildUpliftQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Choose a north star. Pick an intention, then hold to seal it.</div>
-      <div class="qrow" style="margin-top:10px">
-        <button class="qbtn" data-intent="clarity" type="button">Clarity</button>
-        <button class="qbtn" data-intent="courage" type="button">Courage</button>
-        <button class="qbtn" data-intent="kindness" type="button">Kindness</button>
+      <div class="qhelp">Choose a message that brightens a stranger. Then hold Send to release it clean.</div>
+      <div class="qmsgGrid" style="margin-top:10px">
+        <button class="qbtn qmsg" data-msg="seen" type="button" aria-pressed="false">I see you. Keep going.</button>
+        <button class="qbtn qmsg" data-msg="steady" type="button" aria-pressed="false">You’re doing better than you think.</button>
+        <button class="qbtn qmsg" data-msg="breath" type="button" aria-pressed="false">Breathe. One small step is enough.</button>
       </div>
       <div class="qrow" style="margin-top:10px">
-        <button class="qbtn primary" id="seal" type="button" disabled>Hold to Seal</button>
-        <span class="qchip">Seal <span id="pct" class="mono">0</span>%</span>
+        <button class="qbtn primary" id="send" type="button" disabled>Hold to Send</button>
+        <span class="qchip">Send <span id="pct" class="mono">0</span>%</span>
       </div>
       <div class="qprogress" style="margin-top:10px"><div id="fill"></div></div>
     `;
-    let chosen="";
-    const buttons=$$("[data-intent]", qStage);
-    const seal=$("#seal", qStage);
-    const pct=$("#pct", qStage);
-    const fill=$("#fill", qStage);
 
-    buttons.forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        buttons.forEach(b=>b.classList.remove("primary"));
-        btn.classList.add("primary");
-        chosen = btn.dataset.intent;
-        seal.disabled=false;
-        setStatus(`Selected: ${chosen}. Hold to seal.`);
+    let chosen = "";
+    const buttons = $$("[data-msg]", qStage);
+    const send = $("#send", qStage);
+    const pct = $("#pct", qStage);
+    const fill = $("#fill", qStage);
+    if (!send) return ()=>{};
+
+    function select(btn){
+      buttons.forEach(b => {
+        b.classList.remove("primary");
+        b.setAttribute("aria-pressed", "false");
       });
-    });
+      btn.classList.add("primary");
+      btn.setAttribute("aria-pressed", "true");
+      chosen = String(btn.dataset.msg || "");
+      send.disabled = false;
+      setStatus("Message chosen. Hold Send to release it clean.");
+      setCompleteEnabled(false);
+    }
+    buttons.forEach(btn => btn.addEventListener("click", () => select(btn)));
 
-    let holding=false, val=0, raf=0, last=0, complete=false;
+    let holding = false;
+    let val = 0;
+    let raf = 0;
+    let last = 0;
+    let complete = false;
+
     function step(ts){
-      if (!last) last=ts;
-      const dt=(ts-last)/1000; last=ts;
+      if (!last) last = ts;
+      const dt = (ts - last) / 1000;
+      last = ts;
+
       if (complete) {
         val = 1;
       } else if (holding) {
-        val = Math.min(1, val + dt/1.0);
+        val = Math.min(1, val + dt / 0.9);
       } else {
-        val = Math.max(0, val - dt*1.8);
+        val = Math.max(0, val - dt * 1.8);
       }
-      const p=Math.round(val*100);
-      if (pct) pct.textContent=String(p);
-      if (fill) fill.style.width=p+"%";
-      if (p>=100){
+
+      const p = Math.round(val * 100);
+      if (pct) pct.textContent = String(p);
+      if (fill) fill.style.width = p + "%";
+
+      if (p >= 100){
         complete = true;
         holding = false;
-        seal.disabled = true;
-        seal.textContent = "Sealed";
-        setStatus("Intention sealed. Walk in alignment. Tap Complete to unlock.");
+        send.disabled = true;
+        send.textContent = "Sent";
+        setStatus("Sent. The field lifts. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
-        if (!chosen) setStatus("Pick an intention.");
+        if (!chosen) setStatus("Pick a message.");
+        else setStatus(holding ? "Sending…" : "Hold Send to release it clean.");
         setCompleteEnabled(false);
       }
-      raf=requestAnimationFrame(step);
+
+      raf = requestAnimationFrame(step);
     }
 
-    seal.addEventListener("pointerdown",(e)=>{ if (!chosen) return; holding=true; seal.setPointerCapture?.(e.pointerId); e.preventDefault(); });
-    seal.addEventListener("pointerup",(e)=>{ holding=false; e.preventDefault(); });
-    seal.addEventListener("pointercancel",(e)=>{ holding=false; e.preventDefault(); });
+    function down(e){
+      if (!chosen || complete) return;
+      holding = true;
+      send.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    }
+    function up(e){ holding = false; e.preventDefault(); }
 
-    raf=requestAnimationFrame(step);
-    setStatus("Pick an intention.");
+    send.addEventListener("pointerdown", down);
+    send.addEventListener("pointerup", up);
+    send.addEventListener("pointercancel", up);
+
+    raf = requestAnimationFrame(step);
+    setStatus("Pick a message.");
     setCompleteEnabled(false);
+
     return ()=>{ if (raf) cancelAnimationFrame(raf); };
   }
 
@@ -1214,7 +1616,7 @@ function buildTriangleQuest(){
     const seq=[0,0,0,0].map(()=> Math.floor(Math.random()*pool.length));
     let idx=0;
     qStage.innerHTML = `
-      <div class="qhelp">Watch the glyph, then repeat it. Tap the sigils in order.</div>
+      <div class="qhelp">Watch the glyph, then assemble it. Tap the sigils in order.</div>
       <div class="qsigils" id="sigils" style="margin-top:10px"></div>
       <div class="qchip" style="margin-top:10px">Step: <span id="step" class="mono">0</span>/4</div>
     `;
@@ -1274,19 +1676,21 @@ function buildTriangleQuest(){
     const unlocked = activeInsight?.classList.contains("unlocked");
     if (unlocked){
       setStatus("Already completed. You can reset this Signal if you want to replay it.");
-      setCompleteEnabled(true);
+      if (qComplete) qComplete.textContent = "Completed ✓";
+      setCompleteEnabled(false);
       if (qReset) qReset.style.display = "inline-flex";
+      updateModalNext();
       return;
     }
     switch(id){
       case "1": cleanupQuest = buildGate1AlignSparksQuest(); break;
-      case "2": cleanupQuest = buildTuneQuest(); break;
-      case "3": cleanupQuest = buildSwipeCutQuest(); break;
-      case "4": cleanupQuest = buildHoldChargeQuest(); break;
-      case "5": cleanupQuest = buildFocusRingQuest(); break;
-      case "6": cleanupQuest = buildObserverHoldQuest(); break;
-      case "7": cleanupQuest = buildCoCreatorQuest(); break;
-      case "8": cleanupQuest = buildIntentionQuest(); break;
+      case "2": cleanupQuest = buildLensRotateQuest(); break;
+      case "3": cleanupQuest = buildTuneQuest(); break;
+      case "4": cleanupQuest = buildPatternBreakQuest(); break;
+      case "5": cleanupQuest = buildHoldChargeQuest(); break;
+      case "6": cleanupQuest = buildSwipeCutQuest(); break;
+      case "7": cleanupQuest = buildFocusRingQuest(); break;
+      case "8": cleanupQuest = buildUpliftQuest(); break;
       case "9": cleanupQuest = buildSequenceQuest(); break;
       default:
         setStatus("Tap Complete when you're ready.");
@@ -1305,7 +1709,9 @@ function buildTriangleQuest(){
         .filter(Boolean);
       window.dispatchEvent(new CustomEvent("ev:progress", { detail: { unlocked } }));
       const pill = document.getElementById("constellationPill");
-      if (pill) pill.textContent = `Constellation: ${unlocked.length}/9`;
+      if (pill) pill.textContent = `Constellation: ${unlocked.length}/${TOTAL_INSIGHTS}`;
+      updateNextUp();
+      updateModalNext();
     } catch {
       // ignore
     }
@@ -1328,6 +1734,8 @@ function buildTriangleQuest(){
   }
 
   loadProgress();
+  refreshNoteBadges();
+  updateNextUp();
   // Defer so the skyfield module has time to attach listeners.
   defer(emitProgressUpdate);
 
@@ -1343,6 +1751,7 @@ function buildTriangleQuest(){
       }
     });
     card.addEventListener("click", ()=>{
+      flushNoteDebounce();
       activeInsight = card;
       const name = $(".iname", card)?.textContent?.trim() || "Quest";
       const quest = $(".quest", card)?.textContent?.trim() || "Complete the mini-quest.";
@@ -1352,21 +1761,42 @@ function buildTriangleQuest(){
       if (qDesc) qDesc.textContent = quest;
 
       if (qGo){
-        if (trackId) {
-          qGo.style.display = "inline-flex";
-          qGo.dataset.track = trackId;
-        } else {
-          // Still let people jump to the player, even if the gate isn't tied to a specific track
-          qGo.style.display = "inline-flex";
-          qGo.dataset.track = "";
-          qGo.textContent = "Go to Player";
-        }
+        // Still let people jump to the player, even if the gate isn't tied to a specific track
+        qGo.style.display = "inline-flex";
+        qGo.dataset.track = trackId;
+        qGo.textContent = trackId ? "Go to Track" : "Go to Player";
       }
 
       // Open first so canvas-based quests can measure correctly
+      loadNoteUI();
       openModal();
       requestAnimationFrame(()=> setupQuest(card.dataset.insight));
     });
+  });
+
+  continueBtn?.addEventListener("click", ()=>{
+    const nextId = getNextLockedId();
+    if (!nextId) return;
+    const card = $(`.insight[data-insight="${nextId}"]`);
+    if (!card) return;
+    try { card.scrollIntoView({ behavior: "smooth", block: "center" }); } catch {}
+    card.click();
+  });
+
+  qNext?.addEventListener("click", ()=>{
+    const nextId = getNextLockedId();
+    if (!nextId) return;
+    const card = $(`.insight[data-insight="${nextId}"]`);
+    if (!card) return;
+    card.click();
+  });
+
+  qNotes?.addEventListener("input", scheduleNoteSave);
+  qNoteClear?.addEventListener("click", ()=>{
+    if (!qNotes) return;
+    qNotes.value = "";
+    scheduleNoteSave();
+    try { qNotes.focus(); } catch {}
   });
 
   qClose?.addEventListener("click", closeModal);
@@ -1375,21 +1805,24 @@ function buildTriangleQuest(){
 
   qComplete?.addEventListener("click", ()=>{
     if (qComplete?.disabled) return;
-    if (activeInsight){
-      const wasUnlocked = activeInsight.classList.contains("unlocked");
-      if (!wasUnlocked){
-        activeInsight.classList.add("unlocked");
-        saveProgress();
-        emitInsightUnlocked(activeInsight.dataset.insight || "");
-      } else {
-        emitProgressUpdate();
-        celebrateStage();
-      }
-      setStatus(wasUnlocked ? "Already completed." : "Completed.");
-      setCompleteEnabled(true);
+    if (!activeInsight) return;
+
+    const wasUnlocked = activeInsight.classList.contains("unlocked");
+    if (!wasUnlocked){
+      activeInsight.classList.add("unlocked");
+      saveProgress();
+      emitInsightUnlocked(activeInsight.dataset.insight || "");
+      setStatus("Completed. Signal unlocked.");
+    } else {
+      emitProgressUpdate();
+      celebrateStage();
+      setStatus("Already completed.");
     }
-    // Tiny delay so the burst feedback is visible.
-    setTimeout(closeModal, 240);
+
+    if (qReset) qReset.style.display = "inline-flex";
+    if (qComplete) qComplete.textContent = "Completed ✓";
+    setCompleteEnabled(false);
+    updateModalNext();
   });
 
   // Reset a single gate
