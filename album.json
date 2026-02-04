@@ -6,7 +6,10 @@
     {
       "id": "t01_energy_game",
       "title": "Energy Game (Take / Shield / Source)",
-      "aura": { "a1": "#ff2bd6", "a2": "#26e6ff" },
+      "aura": {
+        "a1": "#ff2bd6",
+        "a2": "#26e6ff"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='18' fill='none' stroke='currentColor' stroke-width='2'/><circle cx='32' cy='32' r='8' fill='currentColor'/><path d='M32 14 L32 20 M32 44 L32 50 M14 32 L20 32 M44 32 L50 32' stroke='currentColor' stroke-width='2' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_1_v2_energy_game_take_shield_source.mp3",
       "cover": "./covers/01-energy-game.png",
@@ -17,12 +20,15 @@
       "opposing": "Clean boundaries & sourced power",
       "takeaway": "Practice:\n• Spot the control drama (intimidator, interrogator, aloof, or “poor me”).\n• Don’t JADE (justify, argue, defend, explain).\n• Name the boundary once, then exit the loop.\n• Refill from source (breath, nature, craft) so you don’t bargain from depletion.",
       "sound_style": "Heavy mid-tempo half-time SwampHop. Thick clean sub, minimal hats, tight snare, gritty stabs. Calm menace.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Take the spark — feel it pull\nOld reflex, old rule\nHands out first… before the why\nI used to live on borrowed light\n\nI can take it fast, I can take it clean\nSteal a little warmth from the in-between\nCrowd gets loud, I get fed\nBut it never keeps my mind in bed\n\nI can suck the room with a smile and a sigh\nMake you feel guilty for passing me by\nBut the bill comes due in my chest\nAnd the emptiness never rests\n\nSo I draw the line in air\nNo blame… no prayer\nJust a quiet boundary\nWhere my peace can breathe\n\nShield the flow — keep my center\nSource the light — I remember\nEnergy game, I change the rules\nI don’t drink from drowning pools\nShield the flow — steady thunder\nSource the light — from down under\nI’m not begging, I’m not bruised\nI’m plugged in… I’m not used\n\nIf you’re storming, I won’t match\nIf you’re testing, I detach\nNo receipts, no debate\nI can love you without being bait\n\nBreath in slow, seal the seams\nClose the leaks in little dreams\nFeet on ground, eyes on sky\nI’m the socket, not the wire\n\nSay it soft: “Not today.”\nSay it clear: “This is mine.”\nLet it pass like weather\nLet it go like time\n\nShield the flow — keep my center\nSource the light — I remember\nEnergy game, I change the rules\nI don’t drink from drowning pools\nShield the flow — steady thunder\nSource the light — from down under\nI’m not begging, I’m not bruised\nI’m plugged in… I’m not used\n\nTake… shield… source…\nTake… shield… source…"
     },
     {
       "id": "t02_signs_static",
       "title": "Signs in the Static",
-      "aura": { "a1": "#26e6ff", "a2": "#ffffff" },
+      "aura": {
+        "a1": "#26e6ff",
+        "a2": "#ffffff"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M12 32 Q20 20, 28 32 T44 32' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/><path d='M12 40 Q20 28, 28 40 T44 40' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_2_v2_signs_in_the_static.mp3",
       "cover": "./covers/02-signs-in-the-static.png",
@@ -33,12 +39,15 @@
       "opposing": "Urgency, fear, and static",
       "takeaway": "Signal checklist:\n• Calm repetition + steady breath = signal.\n• Urgency, dread, or spiraling = noise.\n• Take one small grounded step, test reality, and let clarity stack before you commit.",
       "sound_style": "Half-time glide. Airy space, radio hiss texture, glitch-chime sparks, warm guitar bends.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Shhh… krrsh…\nHold still…\nThere it is.\n\nWhispers flicker on the screen\nTiny patterns in-between\nNot a siren, not a shove\nJust a nudge from quiet love\n\nIf I’m rushing, I go blind\nIf I’m scared, I lose the line\nStatic screams in urgent tones\nBut the truth arrives in bones\n\nSo I slow the wheel\nLet the noise peel\nAnd the signal finds me\nWhen I’m not hunting\n\nSigns in the static — not panic\nSoft and exact — automatic\nI trust the pause, I trust the space\nThe right thing moves at its own pace\nSigns in the static — I catch it\nA little spark, then I match it\nWhen fear gets loud, I turn it down\nAnd hear the message under sound\n\nA stranger smiles, a song repeats\nSame word twice on two streets\nClock hits 11:11 again\nNot magic — just “pay attention”\n\nIf the moment feels tight and sharp\nThat’s the static doing its part\nBut the real path feels like air\nLike “you can breathe in here”\n\nNot every pull is mine\nNot every thought is true\nIf it’s urgency — I wait\nIf it’s calm — I move\n\nSigns in the static — not panic\nSoft and exact — automatic\nI trust the pause, I trust the space\nThe right thing moves at its own pace\nSigns in the static — I catch it\nA little spark, then I match it\nWhen fear gets loud, I turn it down\nAnd hear the message under sound\n\nShhh… krrsh…\nThank you.\nNext."
     },
     {
       "id": "t03_receipts_ropes",
       "title": "Receipts & Ropes",
-      "aura": { "a1": "#ffcc66", "a2": "#ff2bd6" },
+      "aura": {
+        "a1": "#ffcc66",
+        "a2": "#ff2bd6"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M20 20 L44 44' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><path d='M20 44 L44 20' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='32' cy='32' r='4' fill='currentColor'/></svg>",
       "audio": "./audio/track_3_v2_receipts_&_ropes.mp3",
       "cover": "./covers/03-receipts-and-ropes.png",
@@ -49,12 +58,15 @@
       "opposing": "Boundaries without proving",
       "takeaway": "Cut the rope:\n• Drop the receipts and the proving.\n• Don’t debate the hook—control dramas feed on reaction.\n• Set the limit, leave the stage, and return only when respect is present.",
       "sound_style": "Crunchy bar-bounce. Heavy sub, snappy snare, minimal hats, porch/lantern tension.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Ledger open…\nHands shaking…\nLet it go.\n\nReceipts in the pocket, ready to prove\nRopes in the hallway, tied to a mood\n“Remember you said—” / “Remember you did—”\nI keep the score till my heart goes rigid\n\nI rehearse the case in my head at night\nThinking control will make it right\nBut love can’t live in a courtroom light\nAnd peace won’t come from winning a fight\n\nSo I drop the paper\nLoosen the tether\nI can be honest\nWithout the pressure\n\nReceipts & ropes — I cut them loose\nI don’t need proof to tell the truth\nBoundaries clean — no stage, no show\nI can say “no” and still let love grow\nReceipts & ropes — I bless and burn\nI keep my dignity when I turn\nNo more trials in my chest\nI choose release… I choose rest\n\nIf you need control, you’ll call it “care”\nIf I need control, I’ll call it “fair”\nBut we both know that tightening grip\nMakes the whole relationship slip\n\nSo here’s my line, said kind and plain\nNo blame weapon, no shame chain\nIf you cross it, I won’t explode\nI’ll step back slow, and hold my road\n\nYou don’t owe me a scene\nI don’t owe you a fight\nWe can end it respectful\nWe can end it right\n\nReceipts & ropes — I cut them loose\nI don’t need proof to tell the truth\nBoundaries clean — no stage, no show\nI can say “no” and still let love grow\nReceipts & ropes — I bless and burn\nI keep my dignity when I turn\nNo more trials in my chest\nI choose release… I choose rest\n\nClose the ledger.\nOpen the door."
     },
     {
       "id": "t04_green_battery",
       "title": "Green Battery",
-      "aura": { "a1": "#6bffb0", "a2": "#26e6ff" },
+      "aura": {
+        "a1": "#6bffb0",
+        "a2": "#26e6ff"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='16' fill='none' stroke='currentColor' stroke-width='2.5'/><circle cx='32' cy='32' r='8' fill='none' stroke='currentColor' stroke-width='2'/></svg>",
       "audio": "./audio/track_4_v2_green_battery.mp3",
       "cover": "./covers/04-green-battery.png",
@@ -65,28 +77,34 @@
       "opposing": "Drama-based fuel",
       "takeaway": "Recharge protocol:\n• Audit leaks (doomscroll, late-night spirals, arguing, over-giving).\n• Replace with clean inputs (sleep, sunlight, movement, nature, building something real).\n• When you’re charged, you don’t need to take energy from anyone.",
       "sound_style": "Warm half-time SwampHop. Organic ambience, wind/crickets, soulful guitar, big pockets.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Inhale…\nGreen light…\nCharge up.\n\nI used to feed on the rush of a mess\nDrama flames just to feel “yes”\nBut the tank runs dry when the show is done\nAnd I’m empty even when I “won”\n\nSo I learned the quiet way\nLittle charges through the day\nSun on skin, feet in dirt\nTruth that doesn’t have to hurt\n\nGreen battery — fill me slow\nSeal the leaks, let the current grow\nI don’t need chaos to feel alive\nI can breathe and still arrive\nGreen battery — clean and bright\nI charge myself in honest light\nPower steady, soft and true\nAnd I don’t lose myself in you\n\nName the leak, patch the seam\nStop the bleed in little dreams\nHydrate heart, rest the mind\nLeave the heavy stuff behind\n\nCharge the heart…\nHold the glow…\nGreen battery."
     },
     {
       "id": "t05_focus_fire",
       "title": "Focus = Fire",
-      "aura": { "a1": "#ff7a18", "a2": "#ffcc66" },
+      "aura": {
+        "a1": "#ff7a18",
+        "a2": "#ffcc66"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M32 16 L28 40 L32 48 L36 40 Z' fill='currentColor'/><path d='M24 32 Q32 28, 40 32' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_5_v2_focus_fire.mp3",
       "cover": "./covers/05-focus-fire.png",
-      "duration_hint": "0:48",
-      "bytes": 1095865,
+      "duration_hint": "3:48",
+      "bytes": 5192287,
       "mantra": "Focus is fire. I light what I feed.",
       "concept_core": "Focused intention → momentum",
       "opposing": "Reaction, fog, and fragmentation",
       "takeaway": "Focus ritual:\n• One north star.\n• One next move.\n• Put attention where energy rises, track the reps, return fast.",
       "sound_style": "Aggressive minimal half-time. Ember crackle motif, heavy sub, disciplined space, mantra hook.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Strike the match.\nHold the aim.\n\nReaction is a fog machine\nMakes a mess and calls it “seen”\nI used to chase a thousand flames\nAnd wonder why I stayed the same\n\nNow I pick one clean direction\nGive it time, give it protection\nSmall steps stacked like bricks in line\nSuddenly the world is mine\n\nNo more scatter\nI don’t shatter\nI choose the point\nAnd hold it steady\n\nFocus equals fire — watch it climb\nOne clear thought at a time\nHeat turns fear into fuel\nMakes the moment usable\nFocus equals fire — steady burn\nNo quick crash, no sharp turn\nI don’t fight the storm outside\nI light the path I walk inside\n\nIf they bait me, I don’t bite\nIf they doubt me, I stay light\nI don’t argue with the smoke\nI keep feeding what I wrote\n\nPhone face down, breath in deep\nPromises I actually keep\nWhen my mind tries to split in four\nI bring it back to one core\n\nWhat you feed will grow\nWhat you starve will go\nSo I bless my focus\nLike a flame I hold\n\nFocus equals fire — watch it climb\nOne clear thought at a time\nHeat turns fear into fuel\nMakes the moment usable\nFocus equals fire — steady burn\nNo quick crash, no sharp turn\nI don’t fight the storm outside\nI light the path I walk inside\n\nHold the aim.\nLet it burn."
     },
     {
       "id": "t06_the_observer",
       "title": "The Observer",
-      "aura": { "a1": "#ffcc66", "a2": "#2b6bff" },
+      "aura": {
+        "a1": "#ffcc66",
+        "a2": "#2b6bff"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='12' fill='none' stroke='currentColor' stroke-width='2.5'/><path d='M32 20 L32 16 M32 44 L32 48 M20 32 L16 32 M44 32 L48 32' stroke='currentColor' stroke-width='2' stroke-linecap='round'/><circle cx='32' cy='32' r='3' fill='currentColor'/></svg>",
       "audio": "./audio/track_6_v2_the_observer.mp3",
       "cover": "./covers/06-the-observer.png",
@@ -97,12 +115,15 @@
       "opposing": "Hooked reactivity",
       "takeaway": "Observer mode:\n• Notice the pull without becoming it.\n• Breathe, then choose the clean action.\n• Ask one clear question, then exit with grace—no performance, no proving.",
       "sound_style": "Slow, surgical half-time. Room tone, sparse hats, deep sub, noir tension, dry voice.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Behind my eyes…\nThere’s room.\n\nStillness sits behind the eyes\nWatching worlds in quiet guise\nNo attachment, just the view\nI don’t drown in what I do\n\nI watch the wave…\nAnd let it move.\n\nObserver…"
     },
     {
       "id": "t07_co_creator",
       "title": "The Co-Creator",
-      "aura": { "a1": "#ff4fd8", "a2": "#7dffdf" },
+      "aura": {
+        "a1": "#ff4fd8",
+        "a2": "#7dffdf"
+      },
       "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M20 32 Q32 20, 44 32 Q32 44, 20 32' fill='none' stroke='currentColor' stroke-width='2.5'/><path d='M32 20 L32 44' stroke='currentColor' stroke-width='2' stroke-linecap='round'/></svg>",
       "audio": "./audio/track_7_v2_the_co-creator.mp3",
       "cover": "./covers/07-co-creator.png",
@@ -113,7 +134,47 @@
       "opposing": "Strings, tests, and control",
       "takeaway": "Co-creator rules:\n• Clean asks, clean yes/no.\n• Repair fast and celebrate wins.\n• Build the third thing together—without cords, without games, with consent and momentum.",
       "sound_style": "Warm half-time bounce. Unity pad, warm guitars, thick sub, calm swagger.",
-      "lyrics": "Lyrics coming soon."
+      "lyrics": "Two signals…\nOne song.\n\nIf love is tests, it turns to wire\nIf love is control, it burns to fire\nStrings attached to every “yes”\nLeaves a bruise in tenderness\n\nSo I show up clean and clear\nNo hidden hooks, no hidden fear\nI give what’s real, I ask what’s true\nAnd leave you space to be you\n\nAligned exchange\nNo games, no strain\nJust honest motion\nIn the same direction\n\nCo-creator — hands in light\nWe build the day, we hold the night\nGive and take without the chains\nLove can grow without the reins\nCo-creator — clear and kind\nTwo awake hearts, one aligned\nNo more strings, no more control\nJust shared power — whole and whole\n\nIf you pull back, I won’t chase\nIf you need time, I make space\nIf I need air, I won’t hide\nI’ll say it soft, with pride\n\nWe don’t “win” by making hurt\nWe don’t “prove” by dragging dirt\nWe create what we repeat\nSo we repeat what makes us free\n\nCo-creator — hands in light\nWe build the day, we hold the night\nGive and take without the chains\nLove can grow without the reins\nCo-creator — clear and kind\nTwo awake hearts, one aligned\nNo more strings, no more control\nJust shared power — whole and whole\n\nTwo signals…\nOne song."
+    },
+    {
+      "id": "t08_bonus_receipts_ropes",
+      "title": "Receipts & Ropes (Bonus Cut)",
+      "aura": {
+        "a1": "#ffcc66",
+        "a2": "#ff2bd6"
+      },
+      "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M20 20 L44 44' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><path d='M20 44 L44 20' stroke='currentColor' stroke-width='3' stroke-linecap='round'/><circle cx='32' cy='32' r='4' fill='currentColor'/></svg>",
+      "audio": "./audio/bonus_track_receipts_ropes.mp3",
+      "cover": "./covers/03-receipts-and-ropes.png",
+      "duration_hint": "3:29",
+      "bytes": 4245027,
+      "mantra": "No receipts. No ropes. I cut clean.",
+      "concept_core": "Relationship control dramas",
+      "opposing": "Boundaries without proving",
+      "takeaway": "Cut the rope:\n• Drop the receipts and the proving.\n• Don’t debate the hook—control dramas feed on reaction.\n• Set the limit, leave the stage, and return only when respect is present.",
+      "sound_style": "Bonus cut — extended transmission.",
+      "lyrics": "Ledger open…\nHands shaking…\nLet it go.\n\nReceipts in the pocket, ready to prove\nRopes in the hallway, tied to a mood\n“Remember you said—” / “Remember you did—”\nI keep the score till my heart goes rigid\n\nI rehearse the case in my head at night\nThinking control will make it right\nBut love can’t live in a courtroom light\nAnd peace won’t come from winning a fight\n\nSo I drop the paper\nLoosen the tether\nI can be honest\nWithout the pressure\n\nReceipts & ropes — I cut them loose\nI don’t need proof to tell the truth\nBoundaries clean — no stage, no show\nI can say “no” and still let love grow\nReceipts & ropes — I bless and burn\nI keep my dignity when I turn\nNo more trials in my chest\nI choose release… I choose rest\n\nIf you need control, you’ll call it “care”\nIf I need control, I’ll call it “fair”\nBut we both know that tightening grip\nMakes the whole relationship slip\n\nSo here’s my line, said kind and plain\nNo blame weapon, no shame chain\nIf you cross it, I won’t explode\nI’ll step back slow, and hold my road\n\nYou don’t owe me a scene\nI don’t owe you a fight\nWe can end it respectful\nWe can end it right\n\nReceipts & ropes — I cut them loose\nI don’t need proof to tell the truth\nBoundaries clean — no stage, no show\nI can say “no” and still let love grow\nReceipts & ropes — I bless and burn\nI keep my dignity when I turn\nNo more trials in my chest\nI choose release… I choose rest\n\nClose the ledger.\nOpen the door.",
+      "bonus": true
+    },
+    {
+      "id": "t09_bonus_green_battery",
+      "title": "Green Battery (Bonus Cut)",
+      "aura": {
+        "a1": "#6bffb0",
+        "a2": "#26e6ff"
+      },
+      "sigil_svg": "<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><circle cx='32' cy='32' r='16' fill='none' stroke='currentColor' stroke-width='2.5'/><circle cx='32' cy='32' r='8' fill='none' stroke='currentColor' stroke-width='2'/></svg>",
+      "audio": "./audio/bonus_track_green_battery.mp3",
+      "cover": "./covers/04-green-battery.png",
+      "duration_hint": "4:03",
+      "bytes": 5509763,
+      "mantra": "Seal the leaks. Source the light.",
+      "concept_core": "Sourcing energy & sealing leaks",
+      "opposing": "Drama-based fuel",
+      "takeaway": "Recharge protocol:\n• Audit leaks (doomscroll, late-night spirals, arguing, over-giving).\n• Replace with clean inputs (sleep, sunlight, movement, nature, building something real).\n• When you’re charged, you don’t need to take energy from anyone.",
+      "sound_style": "Bonus cut — extended transmission.",
+      "lyrics": "Inhale…\nGreen light…\nCharge up.\n\nI used to feed on the rush of a mess\nDrama flames just to feel “yes”\nBut the tank runs dry when the show is done\nAnd I’m empty even when I “won”\n\nSo I learned the quiet way\nLittle charges through the day\nSun on skin, feet in dirt\nTruth that doesn’t have to hurt\n\nGreen battery — fill me slow\nSeal the leaks, let the current grow\nI don’t need chaos to feel alive\nI can breathe and still arrive\nGreen battery — clean and bright\nI charge myself in honest light\nPower steady, soft and true\nAnd I don’t lose myself in you\n\nName the leak, patch the seam\nStop the bleed in little dreams\nHydrate heart, rest the mind\nLeave the heavy stuff behind\n\nCharge the heart…\nHold the glow…\nGreen battery.",
+      "bonus": true
     }
   ]
 }
