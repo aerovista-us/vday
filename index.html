@@ -12,6 +12,12 @@
   <meta property="og:description" content="Valentine’s Day Drop — Love Without Cords. Listen, explore lyrics/concept, and unlock the Adventure." />
   <meta property="og:image" content="https://aerovista-us.github.io/vday/covers/01-energy-game.png" />
   <meta name="twitter:card" content="summary_large_image" />
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="EchoVerse">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="stylesheet" href="./styles.css">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
@@ -31,6 +37,8 @@
       document.head.appendChild(s);
     })();
   </script>
+
+  <script defer src="./pwa.js"></script>
 </head>
 
 <body data-theme="anti">
@@ -569,16 +577,6 @@
       loadAudioForCurrent(false);
 
       umamiTrack("page_view_player", { album: album.album_title || "unknown" });
-
-      // Service worker (optional)
-      if ("serviceWorker" in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.register("./sw.js");
-          console.log("Service Worker registered:", registration.scope);
-        } catch (err) {
-          console.warn("Service Worker registration failed:", err);
-        }
-      }
 
       renderLocalEstimate();
     }

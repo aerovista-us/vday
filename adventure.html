@@ -6,6 +6,12 @@
   <meta name="theme-color" content="#0b0c10" />
   <meta name="description" content="EchoVerse Adventure — unlock gates, complete mini-quests, and jump into the matching track." />
   <link rel="canonical" href="https://aerovista-us.github.io/vday/adventure.html" />
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="EchoVerse">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>EchoVerse • Adventure</title>
 
   <link rel="stylesheet" href="./styles.css">
@@ -27,9 +33,11 @@
     })();
   </script>
 
+  <script defer src="./pwa.js"></script>
+
   <style>
     /* Adventure page sits on top of styles.css, adding only what it needs */
-    .page { max-width: 1100px; margin: 0 auto; padding: 18px 14px 110px; position: relative; z-index: 1; }
+    .page { max-width: 1100px; margin: 0 auto; padding: 18px 14px calc(110px + env(safe-area-inset-bottom)); position: relative; z-index: 1; }
     .center { text-align:center; }
     .heroTitle { font-size: clamp(26px, 4vw, 40px); font-weight: 950; letter-spacing:.08em; text-transform: uppercase; margin: 14px 0 8px; }
     .subTitle { max-width: 66ch; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.5; }
@@ -80,6 +88,9 @@
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       box-shadow: 0 18px 60px rgba(0,0,0,.55);
       padding: 16px;
+      max-height: 92vh;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
     }
     .quest-modal-content h2{ margin:0; font-weight: 950; letter-spacing:.06em; text-transform: uppercase; }
     .quest-modal-content p{ margin:10px 0 0; color: var(--muted); line-height: 1.55; }
@@ -92,9 +103,12 @@
       border-radius: 18px;
       background: rgba(0,0,0,.18);
       padding: 12px;
-      min-height: 170px;
+      min-height: 200px;
       position: relative;
       overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .quest-status{
       margin-top: 10px;
@@ -135,6 +149,19 @@
       border:1px solid var(--line);
       background: rgba(255,255,255,.08);
       overflow:hidden;
+    }
+
+    /* Mobile: bottom-sheet feel + bigger interaction space */
+    @media (max-width: 560px){
+      .quest-modal{ padding: 0; align-items: flex-end; }
+      .quest-modal-content{
+        width: 100%;
+        border-radius: 24px 24px 0 0;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      }
+      .quest-stage{ min-height: 240px; }
+      .quest-actions{ justify-content: stretch; }
+      .quest-actions .btn{ flex: 1; }
     }
     .qprogress > div{
       height:100%;

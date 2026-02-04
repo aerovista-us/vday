@@ -107,6 +107,7 @@ body{
   color:var(--text);
   overflow-x:hidden;
 }
+html.ev-modal-open, body.ev-modal-open{ overflow:hidden; }
 
 /* Subtle shimmer */
 body::before{
@@ -144,7 +145,7 @@ body::before{
 }
 
 a{color:inherit}
-.wrap{max-width:1100px;margin:0 auto;padding:18px 14px 110px; position:relative; z-index:1;}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 14px calc(110px + env(safe-area-inset-bottom)); position:relative; z-index:1;}
 
 .topbar{
   position:sticky;top:0;z-index:20;
@@ -400,7 +401,7 @@ a{color:inherit}
 
 .footerbar .inner{
   max-width:1100px;margin:0 auto;
-  padding:10px 14px;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
   display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
 }
 
@@ -426,6 +427,36 @@ a{color:inherit}
 .sigil-chip svg{width:20px;height:20px;color: color-mix(in oklab, var(--track-a1) 55%, var(--text)); filter: var(--sigil-glow);}
 .track .sigil-mini{display:inline-flex; width:16px;height:16px; color: color-mix(in oklab, var(--track-a2) 55%, var(--text)); opacity:.9; filter: var(--sigil-glow);}
 .track .sigil-mini svg{width:16px;height:16px;display:block}
+
+/* PWA install prompt */
+.install-banner{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index:40; /* above footerbar, below modals */
+  display:none;
+}
+.install-banner.show{display:block}
+.install-card{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  backdrop-filter: blur(14px);
+}
+.install-title{font-weight:950; letter-spacing:.02em}
+.install-desc{margin-top:4px; font-size:12px; color:var(--muted); line-height:1.4}
+.install-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end}
+@media (max-width: 560px){
+  .install-card{flex-direction:column; align-items:stretch}
+  .install-actions .btn{width:100%}
+}
 
 @media (prefers-reduced-motion: reduce){
   *{scroll-behavior:auto !important; transition:none !important; animation:none !important;}

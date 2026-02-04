@@ -1,0 +1,36 @@
+{
+  "name": "EchoVerse • Love Without Cords",
+  "short_name": "EchoVerse",
+  "description": "Valentine’s Day Drop — Love Without Cords. A field manual in music form: energy awareness, control dramas, signal vs noise, focus vs fog, and co-creation without control.",
+  "id": "./",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "theme_color": "#0b0c10",
+  "background_color": "#0b0c10",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Player",
+      "short_name": "Player",
+      "description": "Open the album player",
+      "url": "./",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Adventure",
+      "short_name": "Adventure",
+      "description": "Open the quest adventure",
+      "url": "./adventure.html",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "categories": ["music", "entertainment"]
+}

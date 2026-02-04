@@ -101,17 +101,29 @@
 
   let activeInsight = null;
   let cleanupQuest = null;
+  let lastFocus = null;
 
   function openModal(){
     if (!modal) return;
+    lastFocus = document.activeElement;
+    document.documentElement.classList.add("ev-modal-open");
+    document.body.classList.add("ev-modal-open");
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
+    requestAnimationFrame(() => {
+      const target = qClose || modal.querySelector("[role='dialog']") || modal;
+      target?.focus?.();
+    });
   }
   function closeModal(){
     if (!modal) return;
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
+    document.documentElement.classList.remove("ev-modal-open");
+    document.body.classList.remove("ev-modal-open");
     clearStage();
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    lastFocus = null;
   }
 
 
