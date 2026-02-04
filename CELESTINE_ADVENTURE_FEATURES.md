@@ -104,7 +104,7 @@ Each of the 9 Insights from The Celestine Prophecy is presented as an interactiv
 ### Puzzle System
 
 Each Insight includes an interactive puzzle:
-- **Question Format:** Multiple choice based on the Insight's teachings
+- **Interactive Format:** Solvable puzzle based on the Insight's teachings
 - **Progressive Unlocking:** Must complete Insights in order
 - **Rewards:** Completing puzzles grants "Share" energy
 - **Visual Feedback:** Correct answers glow green, incorrect glow red
@@ -113,8 +113,8 @@ Each Insight includes an interactive puzzle:
 ### Puzzle Mechanics
 
 - Click an unlocked Insight card to open its puzzle
-- Read the question carefully
-- Select the answer that aligns with the Insight's teaching
+- Read the passage carefully review any images for clues
+- Attempt the answer that aligns with the Insight's teaching
 - Correct answers unlock the next Insight
 - Progress is saved automatically
 
@@ -376,3 +376,4 @@ For questions, suggestions, or issues:
 
 **Last Updated:** 2026-01-18  
 **Version:** 2.0 (Celestine Prophecy Adventure)
+
