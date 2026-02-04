@@ -125,6 +125,12 @@
   const qReset = $("#questReset");
   const qComplete = $("#questComplete");
   const qGo = $("#questGo");
+  const qBanner = $("#questBanner");
+  const qSigil = $("#questSigil");
+  const qKicker = $("#questKicker");
+  const qSceneText = $("#questSceneText");
+
+  const sceneFx = { a1: "", a2: "" };
 
   let activeInsight = null;
   let cleanupQuest = null;
@@ -186,6 +192,223 @@
     twin:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M24 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M40 10c6 6 8 10 8 14 0 4.5-3.5 8-8 8s-8-3.5-8-8c0-4 2-8 8-14Z"/><path fill="currentColor" d="M32 34l4 6-4 6-4-6 4-6Z"/></svg>`
   };
 
+  // Scene dressing + animated sigils for the quest modal
+  const QUESTS = {
+    "1": {
+      kicker: "Awakening Signal",
+      scene: "Three sparks want alignment. Find the first stable shape and the field stops wobbling.",
+      a1: "#ff2bd6",
+      a2: "#26e6ff",
+      paths: [
+        { d: "M60 34 L85 79 L35 79 Z", delay: 0.0, width: 4.2 },
+        { d: "M60 44 L76 73 L44 73 Z", delay: 0.08, width: 3.2 }
+      ]
+    },
+    "2": {
+      kicker: "Signal Lock",
+      scene: "Inside the static, a clean tone appears. Tune to it—then hold steady until it locks.",
+      a1: "#26e6ff",
+      a2: "#ffffff",
+      paths: [
+        { d: "M24 62 C34 44 46 80 60 62 C74 44 86 80 96 62", delay: 0.0, width: 4.0 },
+        { d: "M24 72 C34 54 46 90 60 72 C74 54 86 90 96 72", delay: 0.10, width: 3.2 }
+      ]
+    },
+    "3": {
+      kicker: "Cut the Cord",
+      scene: "A cord tugs for reaction. Cut clean—no receipts, no rope—just freedom.",
+      a1: "#ffcc66",
+      a2: "#ff2bd6",
+      paths: [
+        { d: "M38 38 L82 82", delay: 0.0, width: 4.4 },
+        { d: "M82 38 L38 82", delay: 0.08, width: 4.4 },
+        { d: "M34 60 L86 60", delay: 0.18, width: 2.8, opacity: 0.8 }
+      ]
+    },
+    "4": {
+      kicker: "Green Battery",
+      scene: "Charge from within. Hold until full—then release without losing it.",
+      a1: "#6bffb0",
+      a2: "#26e6ff",
+      paths: [
+        { d: "M46 40 H74 V84 H46 Z", delay: 0.0, width: 3.9 },
+        { d: "M52 34 H68", delay: 0.12, width: 3.9 },
+        { d: "M60 46 L52 64 H63 L56 82", delay: 0.20, width: 3.6 }
+      ]
+    },
+    "5": {
+      kicker: "Focus = Fire",
+      scene: "Ignite the spark. Stay inside the ring until attention becomes heat—and heat becomes direction.",
+      a1: "#ff7a18",
+      a2: "#ffcc66",
+      paths: [
+        { d: "M60 34 A26 26 0 1 1 59.9 34", delay: 0.0, width: 3.6, opacity: 0.9 },
+        { d: "M60 44 C54 52 54 62 60 68 C66 62 66 52 60 44 Z", delay: 0.12, width: 3.6 }
+      ]
+    },
+    "6": {
+      kicker: "Observer Mode",
+      scene: "Hold still long enough to see the pattern without becoming it. Clarity arrives quietly.",
+      a1: "#ffcc66",
+      a2: "#2b6bff",
+      paths: [
+        { d: "M26 60 C36 42 84 42 94 60 C84 78 36 78 26 60 Z", delay: 0.0, width: 3.9 },
+        { d: "M60 52 A8 8 0 1 0 60 68 A8 8 0 1 0 60 52", delay: 0.12, width: 3.6 }
+      ]
+    },
+    "7": {
+      kicker: "Co‑Creator",
+      scene: "Two currents meet. Match values, then merge—clean exchange, no control, all momentum.",
+      a1: "#ff4fd8",
+      a2: "#7dffdf",
+      paths: [
+        { d: "M34 60 C34 48 48 48 60 60 C72 72 86 72 86 60 C86 48 72 48 60 60 C48 72 34 72 34 60 Z", delay: 0.0, width: 3.7 },
+        { d: "M60 46 V74", delay: 0.12, width: 3.0, opacity: 0.85 }
+      ]
+    },
+    "8": {
+      kicker: "Compassion Signal",
+      scene: "Pick a bright intention. Seal it—then carry it like a lantern into the next moment.",
+      a1: "#7dffdf",
+      a2: "#ffcc66",
+      paths: [
+        { d: "M60 84 C44 76 34 64 34 52 C34 44 40 38 48 38 C54 38 58 42 60 46 C62 42 66 38 72 38 C80 38 86 44 86 52 C86 64 76 76 60 84 Z", delay: 0.0, width: 3.7 },
+        { d: "M60 32 V44", delay: 0.14, width: 3.0, opacity: 0.85 }
+      ]
+    },
+    "9": {
+      kicker: "Final Glyph",
+      scene: "The pattern returns. Watch it, then repeat it—one clean step at a time.",
+      a1: "#26e6ff",
+      a2: "#ff2bd6",
+      paths: [
+        { d: "M60 30 C42 30 36 46 50 56 C64 66 58 86 40 86", delay: 0.0, width: 3.8 },
+        { d: "M60 30 C78 30 84 46 70 56 C56 66 62 86 80 86", delay: 0.10, width: 3.8 },
+        { d: "M44 60 H76", delay: 0.22, width: 3.0, opacity: 0.85 }
+      ]
+    }
+  };
+
+  function questSigilSVG(id){
+    const q = QUESTS[String(id)] || {};
+    const a1 = q.a1 || "#ff2bd6";
+    const a2 = q.a2 || "#26e6ff";
+    const paths = Array.isArray(q.paths) ? q.paths : [];
+    const uid = `evq_${String(id).replace(/[^0-9a-z]/gi, "") || "x"}`;
+    const grad = `${uid}_g`;
+    const glow = `${uid}_f`;
+
+    const pMarkup = paths.map((p, i)=>{
+      const delay = Number.isFinite(p.delay) ? p.delay : (i * 0.08);
+      const opacity = Number.isFinite(p.opacity) ? p.opacity : 0.95;
+      const width = Number.isFinite(p.width) ? p.width : 3.8;
+      const d = String(p.d || "").trim();
+      if (!d) return "";
+      return `<path class="ev-draw" d="${d}" pathLength="100" style="animation-delay:${delay}s;opacity:${opacity};stroke-width:${width}"></path>`;
+    }).join("");
+
+    return `
+      <svg class="ev-quest-sigil" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="${grad}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="${a1}"/>
+            <stop offset="1" stop-color="${a2}"/>
+          </linearGradient>
+          <filter id="${glow}" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.6" result="b"/>
+            <feColorMatrix in="b" type="matrix"
+              values="1 0 0 0 0
+                      0 1 0 0 0
+                      0 0 1 0 0
+                      0 0 0 .70 0" result="g"/>
+            <feMerge>
+              <feMergeNode in="g"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <circle cx="60" cy="60" r="46" fill="none" stroke="url(#${grad})" stroke-width="2.6" opacity=".55"/>
+        <g class="ev-spin">
+          <circle class="ev-dash" cx="60" cy="60" r="46" fill="none" stroke="url(#${grad})" stroke-width="3.4"/>
+          <circle cx="60" cy="14" r="2.7" fill="url(#${grad})"/>
+          <circle cx="60" cy="14" r="10" fill="url(#${grad})" opacity=".12"/>
+        </g>
+
+        <g filter="url(#${glow})" stroke="url(#${grad})" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          ${pMarkup}
+        </g>
+
+        <g class="ev-core">
+          <circle cx="60" cy="60" r="3.2" fill="url(#${grad})" opacity=".90"/>
+          <circle cx="60" cy="60" r="11" fill="url(#${grad})" opacity=".10"/>
+        </g>
+      </svg>
+    `;
+  }
+
+  function stageBurstAt(clientX, clientY){
+    if (!qStage) return;
+    const r = qStage.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const x = clamp(clientX - r.left, 0, r.width);
+    const y = clamp(clientY - r.top, 0, r.height);
+    const el = document.createElement("span");
+    el.className = "qburst";
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    if (sceneFx.a1) el.style.setProperty("--b1", sceneFx.a1);
+    if (sceneFx.a2) el.style.setProperty("--b2", sceneFx.a2);
+    qStage.appendChild(el);
+    setTimeout(() => { try { el.remove(); } catch {} }, 720);
+  }
+
+  function celebrateStage(){
+    if (!qStage) return;
+    const r = qStage.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height * 0.45;
+    const rx = r.width * 0.18;
+    const ry = r.height * 0.16;
+    for (let i = 0; i < 7; i++){
+      const a = (Math.PI * 2 * i) / 7;
+      stageBurstAt(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry);
+    }
+    stageBurstAt(cx, cy);
+  }
+
+  function applyQuestScene(id){
+    const q = QUESTS[String(id)];
+    if (!q || !qStage || !qBanner || !qSigil || !qKicker || !qSceneText) return;
+
+    sceneFx.a1 = q.a1 || "";
+    sceneFx.a2 = q.a2 || "";
+
+    try{
+      qStage.dataset.scene = String(id);
+      qStage.style.setProperty("--scene-a1", q.a1 || "");
+      qStage.style.setProperty("--scene-a2", q.a2 || "");
+      qBanner.style.setProperty("--scene-a1", q.a1 || "");
+      qBanner.style.setProperty("--scene-a2", q.a2 || "");
+    } catch {}
+
+    qKicker.textContent = q.kicker || "Signal Scene";
+    qSceneText.textContent = q.scene || "";
+    qSigil.innerHTML = questSigilSVG(id);
+    qBanner.setAttribute("aria-hidden", "false");
+  }
+
+  // Ambient click feedback while the modal is open.
+  qStage?.addEventListener("pointerdown", (e)=>{
+    try{
+      if (!modal || !modal.classList.contains("open")) return;
+      stageBurstAt(e.clientX, e.clientY);
+    } catch {
+      // ignore
+    }
+  }, { passive: true });
+
   
   // Gate 1 — Align the Sparks (drag 3 sparks into glowing triangle)
   // This is a true drag-and-drop puzzle (no manual complete).
@@ -197,7 +420,7 @@
         <div class="g1-orb" data-orb="1" style="left: 10%; top: 70%;" aria-label="Spark 1" role="button" tabindex="0"></div>
         <div class="g1-orb" data-orb="2" style="left: 70%; top: 75%;" aria-label="Spark 2" role="button" tabindex="0"></div>
         <div class="g1-orb" data-orb="3" style="left: 45%; top: 20%;" aria-label="Spark 3" role="button" tabindex="0"></div>
-        <p class="g1-hint">Drag the three sparks into the glowing triangle.</p>
+        <p class="g1-hint">Drag the three sparks into the glowing triangle. Let the shape settle.</p>
       </div>
     `;
 
@@ -484,7 +707,7 @@ function buildTriangleQuest(){
     let hold=0, raf=0, last=0;
 
     qStage.innerHTML = `
-      <div class="qhelp">Tune the dial until the signal locks. Hold it steady for 1 second.</div>
+      <div class="qhelp">Inside the static, a clean tone appears. Tune the dial until the signal locks—hold steady for 1 second.</div>
       <div class="qdial">
         <div class="qchip">Target: <span class="mono">${target}</span> Hz</div>
         <input id="dial" type="range" min="40" max="110" value="70" />
@@ -519,7 +742,7 @@ function buildTriangleQuest(){
   function buildSwipeCutQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Swipe across the cord three times to sever it.</div>
+      <div class="qhelp">A cord tugs for reaction. Swipe across it three times to sever it—clean cut.</div>
       <canvas class="qcanvas" id="ropeCanvas" aria-label="Swipe-to-cut canvas"></canvas>
       <div class="qchip" style="margin-top:10px">Cuts: <span id="cuts" class="mono">0</span>/3</div>
     `;
@@ -664,7 +887,7 @@ function buildTriangleQuest(){
   function buildHoldChargeQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Press and hold to charge the battery to 100%. Releasing early resets.</div>
+      <div class="qhelp">Charge from within. Press and hold to reach 100%. Releasing early resets—steady hands.</div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn primary" id="holdBtn" type="button">Hold to Charge</button>
         <span class="qchip">Charge: <span id="pct" class="mono">0</span>%</span>
@@ -731,7 +954,7 @@ function buildTriangleQuest(){
   function buildFocusRingQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Ignite the match, then keep your pointer inside the ring for 3 seconds.</div>
+      <div class="qhelp">Strike the spark. Ignite the match, then keep your pointer inside the ring for 3 seconds.</div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn primary" id="ignite" type="button">Ignite</button>
         <span class="qchip">Focus: <span id="sec" class="mono">0.0</span>s / 3.0s</span>
@@ -825,7 +1048,7 @@ function buildTriangleQuest(){
   function buildObserverHoldQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Press and hold the eye for 2 seconds. Stay still (no big movement).</div>
+      <div class="qhelp">Become the observer. Press and hold the eye for 2 seconds—stay still (no big movement).</div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn primary" id="eyeHold" type="button" aria-label="Hold the eye">${Sigils.eye}</button>
         <span class="qchip">Stillness: <span id="still" class="mono">0.0</span>s / 2.0s</span>
@@ -887,7 +1110,7 @@ function buildTriangleQuest(){
   function buildCoCreatorQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Bring both sliders to the same value, then tap Merge.</div>
+      <div class="qhelp">Two currents, one value. Bring both sliders to the same number, then tap Merge.</div>
       <div class="qrow" style="margin-top:10px">
         <span class="qchip">A</span><input id="a" type="range" min="0" max="100" value="25">
         <span class="qchip">B</span><input id="b" type="range" min="0" max="100" value="75">
@@ -919,7 +1142,7 @@ function buildTriangleQuest(){
   function buildIntentionQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="qhelp">Choose an intention. Hold to seal it.</div>
+      <div class="qhelp">Choose a north star. Pick an intention, then hold to seal it.</div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn" data-intent="clarity" type="button">Clarity</button>
         <button class="qbtn" data-intent="courage" type="button">Courage</button>
@@ -991,7 +1214,7 @@ function buildTriangleQuest(){
     const seq=[0,0,0,0].map(()=> Math.floor(Math.random()*pool.length));
     let idx=0;
     qStage.innerHTML = `
-      <div class="qhelp">Watch the sequence, then tap the sigils in order.</div>
+      <div class="qhelp">Watch the glyph, then repeat it. Tap the sigils in order.</div>
       <div class="qsigils" id="sigils" style="margin-top:10px"></div>
       <div class="qchip" style="margin-top:10px">Step: <span id="step" class="mono">0</span>/4</div>
     `;
@@ -1046,6 +1269,8 @@ function buildTriangleQuest(){
 
   function setupQuest(insightId){
     clearStage();
+    const id = String(insightId || "");
+    applyQuestScene(id);
     const unlocked = activeInsight?.classList.contains("unlocked");
     if (unlocked){
       setStatus("Already completed. You can reset this Signal if you want to replay it.");
@@ -1053,7 +1278,7 @@ function buildTriangleQuest(){
       if (qReset) qReset.style.display = "inline-flex";
       return;
     }
-    switch(String(insightId)){
+    switch(id){
       case "1": cleanupQuest = buildGate1AlignSparksQuest(); break;
       case "2": cleanupQuest = buildTuneQuest(); break;
       case "3": cleanupQuest = buildSwipeCutQuest(); break;
@@ -1087,6 +1312,7 @@ function buildTriangleQuest(){
   }
   function emitInsightUnlocked(insightId){
     emitProgressUpdate();
+    celebrateStage();
     try{
       window.dispatchEvent(new CustomEvent("ev:insightUnlocked", { detail: { id: String(insightId) } }));
     } catch {
@@ -1157,11 +1383,13 @@ function buildTriangleQuest(){
         emitInsightUnlocked(activeInsight.dataset.insight || "");
       } else {
         emitProgressUpdate();
+        celebrateStage();
       }
       setStatus(wasUnlocked ? "Already completed." : "Completed.");
       setCompleteEnabled(true);
     }
-    closeModal();
+    // Tiny delay so the burst feedback is visible.
+    setTimeout(closeModal, 240);
   });
 
   // Reset a single gate

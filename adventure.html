@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0b0c10" />
   <meta name="description" content="EchoVerse Adventure — nine signals, nine mini-quests, and a direct jump into the matching track." />
   <link rel="canonical" href="https://aerovista-us.github.io/vday/adventure.html" />
-  <link rel="manifest" href="./manifest.webmanifest?v=20260204-07">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260204-08">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="EchoVerse">
@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <title>EchoVerse • The Nine Signals</title>
 
-  <link rel="stylesheet" href="./styles.css?v=20260204-07">
+  <link rel="stylesheet" href="./styles.css?v=20260204-08">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
@@ -52,7 +52,7 @@
       }
     })();
   </script>
-  <script defer src="./pwa.js?v=20260204-07"></script>
+  <script defer src="./pwa.js?v=20260204-08"></script>
 
   <style>
     /* Adventure page sits on top of styles.css, adding only what it needs */
@@ -71,23 +71,90 @@
 
     .insightsGrid { display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 10px; }
     .insight {
+      --card-a1: var(--track-a1);
+      --card-a2: var(--track-a2);
       padding: 14px;
       border:1px solid var(--line);
       border-radius: 18px;
       background: rgba(0,0,0,.18);
       cursor:pointer;
-      transition: transform .08s ease, border-color .2s ease, box-shadow .2s ease;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      transition: transform .10s ease, border-color .2s ease, box-shadow .2s ease;
     }
-    .insight:hover{ border-color: var(--line2); box-shadow: 0 10px 26px rgba(0,0,0,.25); }
-    .insight:active{ transform: translateY(1px); }
+    .insight > *{ position: relative; z-index: 1; }
+    .insight::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(560px 280px at 12% 10%, color-mix(in oklab, var(--card-a1) 26%, transparent), transparent 62%),
+        radial-gradient(560px 280px at 92% 18%, color-mix(in oklab, var(--card-a2) 22%, transparent), transparent 64%),
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.12));
+      opacity: .70;
+      transform: translate3d(0,0,0) scale(1.02);
+      animation: evCardBreath 10s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    .insight::after{
+      content: attr(data-insight);
+      position:absolute;
+      top: 12px; right: 12px;
+      width: 30px; height: 30px;
+      border-radius: 999px;
+      display:grid; place-items:center;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.30);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: .06em;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+      pointer-events:none;
+    }
+    .insight:hover{ transform: translateY(-1px); border-color: var(--line2); box-shadow: 0 16px 34px rgba(0,0,0,.34); }
+    .insight:active{ transform: translateY(1px) scale(.995); }
     .insight:focus-visible{ outline: 2px solid var(--accent2); outline-offset: 3px; }
-    .insight.unlocked { border-color: rgba(255,255,255,.24); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); }
+    .insight.unlocked {
+      border-color: rgba(255,255,255,.22);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow:
+        0 18px 48px rgba(0,0,0,.36),
+        0 0 0 1px rgba(255,255,255,.06) inset,
+        0 0 26px color-mix(in oklab, var(--card-a2) 12%, transparent);
+    }
+    .insight.unlocked::before{ opacity: .84; }
+    .insight.unlocked::after{
+      content:"✓";
+      color: color-mix(in oklab, var(--card-a2) 70%, #fff);
+      border-color: color-mix(in oklab, var(--card-a2) 36%, rgba(255,255,255,.18));
+      background: color-mix(in oklab, var(--card-a1) 12%, rgba(0,0,0,.25));
+      box-shadow:
+        0 0 18px color-mix(in oklab, var(--card-a1) 22%, transparent),
+        inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    /* Per-signal accent colors (keeps the grid feeling alive) */
+    .insight[data-insight="1"]{ --card-a1:#ff2bd6; --card-a2:#26e6ff; }
+    .insight[data-insight="2"]{ --card-a1:#26e6ff; --card-a2:#ffffff; }
+    .insight[data-insight="3"]{ --card-a1:#ffcc66; --card-a2:#ff2bd6; }
+    .insight[data-insight="4"]{ --card-a1:#6bffb0; --card-a2:#26e6ff; }
+    .insight[data-insight="5"]{ --card-a1:#ff7a18; --card-a2:#ffcc66; }
+    .insight[data-insight="6"]{ --card-a1:#ffcc66; --card-a2:#2b6bff; }
+    .insight[data-insight="7"]{ --card-a1:#ff4fd8; --card-a2:#7dffdf; }
+    .insight[data-insight="8"]{ --card-a1:#7dffdf; --card-a2:#ffcc66; }
+    .insight[data-insight="9"]{ --card-a1:#26e6ff; --card-a2:#ff2bd6; }
+
+    @keyframes evCardBreath{
+      from { transform: translate3d(-1%, -1%, 0) scale(1.03); }
+      to   { transform: translate3d( 1%,  1%, 0) scale(1.05); }
+    }
 
     .label { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color: var(--muted); }
     .iname { margin-top: 6px; font-weight: 950; letter-spacing:.08em; text-transform: uppercase; }
     .ibody { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.55; }
     .quest { margin-top: 10px; font-size: 12px; color: var(--muted); }
-    .connect { margin-top: 10px; font-size: 12px; color: var(--accent2); display:flex; gap: 8px; align-items:center; }
+    .connect { margin-top: 10px; font-size: 12px; color: color-mix(in oklab, var(--card-a2) 70%, var(--accent2)); display:flex; gap: 8px; align-items:center; }
 
     /* Quest Modal */
     .quest-modal{
@@ -110,10 +177,97 @@
       max-height: 92vh;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
+      position: relative;
     }
     .quest-modal-content h2{ margin:0; font-weight: 950; letter-spacing:.06em; text-transform: uppercase; }
     .quest-modal-content p{ margin:10px 0 0; color: var(--muted); line-height: 1.55; }
     .quest-actions{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; justify-content:flex-end; }
+
+    /* Quest banner: animated sigil + scene setting */
+    .quest-banner{
+      --scene-a1: var(--track-a1);
+      --scene-a2: var(--track-a2);
+      margin-top: 12px;
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      background: rgba(0,0,0,.14);
+      position: relative;
+      overflow:hidden;
+    }
+    .quest-banner::before{
+      content:"";
+      position:absolute; inset:-30%;
+      background:
+        radial-gradient(560px 320px at 18% 20%, color-mix(in oklab, var(--scene-a1) 18%, transparent), transparent 62%),
+        radial-gradient(560px 320px at 82% 35%, color-mix(in oklab, var(--scene-a2) 16%, transparent), transparent 64%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.10));
+      opacity: .92;
+      transform: translate3d(0,0,0);
+      animation: evBannerDrift 12s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    .quest-banner > *{ position: relative; z-index: 1; }
+    .quest-sigil{
+      width: 76px;
+      height: 76px;
+      flex: 0 0 auto;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      display:grid;
+      place-items:center;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+    .quest-sigil svg{ width: 68px; height: 68px; display:block; filter: drop-shadow(0 0 18px rgba(255,255,255,.10)); }
+    .quest-scene .kicker{
+      font-size: 11px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color: var(--muted);
+    }
+    .quest-scene .text{
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .ev-quest-sigil .ev-spin{
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: evSigilSpin 9.5s linear infinite;
+    }
+    .ev-quest-sigil .ev-dash{
+      stroke-dasharray: 5 10;
+      animation: evSigilDash 4.2s linear infinite;
+      opacity: .55;
+    }
+    .ev-quest-sigil .ev-draw{
+      stroke-dasharray: 240;
+      stroke-dashoffset: 240;
+      animation: evSigilDraw 1.15s cubic-bezier(.2,.9,.2,1) forwards;
+    }
+    .ev-quest-sigil .ev-core{
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: evSigilPulse 2.8s ease-in-out infinite;
+    }
+
+    @keyframes evBannerDrift{
+      from { transform: translate3d(-1%, -1%, 0) scale(1.02); }
+      to   { transform: translate3d( 1%,  1%, 0) scale(1.04); }
+    }
+    @keyframes evSigilSpin{ to { transform: rotate(360deg); } }
+    @keyframes evSigilDash{ to { stroke-dashoffset: -140; } }
+    @keyframes evSigilDraw{ to { stroke-dashoffset: 0; } }
+    @keyframes evSigilPulse{
+      0%,100%{ transform: scale(1); opacity: .65; }
+      50%{ transform: scale(1.06); opacity: .95; }
+    }
   
     /* Quest interaction stage */
     .quest-stage{
@@ -129,6 +283,82 @@
       user-select: none;
       -webkit-user-select: none;
     }
+    .quest-stage{
+      --scene-a1: var(--track-a1);
+      --scene-a2: var(--track-a2);
+    }
+    .quest-stage::before{
+      content:"";
+      position:absolute; inset:-30%;
+      background:
+        radial-gradient(640px 380px at 16% 18%, color-mix(in oklab, var(--scene-a1) 22%, transparent), transparent 64%),
+        radial-gradient(640px 380px at 84% 25%, color-mix(in oklab, var(--scene-a2) 18%, transparent), transparent 66%),
+        radial-gradient(600px 320px at 50% 0%, rgba(255,255,255,.06), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.46));
+      opacity: .95;
+      transform: translate3d(0,0,0);
+      animation: evStageDrift 14s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+    .quest-stage::after{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        radial-gradient(circle at 12% 24%, rgba(255,255,255,.14) 0 1px, transparent 2px),
+        radial-gradient(circle at 22% 72%, rgba(255,255,255,.10) 0 1px, transparent 2px),
+        radial-gradient(circle at 44% 28%, rgba(255,255,255,.10) 0 1px, transparent 2px),
+        radial-gradient(circle at 66% 58%, rgba(255,255,255,.12) 0 1px, transparent 2px),
+        radial-gradient(circle at 84% 22%, rgba(255,255,255,.10) 0 1px, transparent 2px),
+        radial-gradient(circle at 86% 76%, rgba(255,255,255,.12) 0 1px, transparent 2px);
+      opacity: .22;
+      pointer-events:none;
+    }
+    .quest-stage > *{ position: relative; z-index: 1; }
+
+    @keyframes evStageDrift{
+      from { transform: translate3d(-1%, -1%, 0) scale(1.02); }
+      to   { transform: translate3d( 1%,  1%, 0) scale(1.05); }
+    }
+
+    /* Click-burst feedback inside the stage (lightweight DOM particles) */
+    .qburst{
+      --b1: var(--scene-a1);
+      --b2: var(--scene-a2);
+      position:absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      left: 0;
+      top: 0;
+      transform: translate(-50%,-50%) scale(.25);
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 35% 35%, color-mix(in oklab, var(--b2) 80%, #fff), transparent 62%),
+        radial-gradient(circle at 60% 60%, color-mix(in oklab, var(--b1) 70%, #fff), transparent 66%);
+      filter: drop-shadow(0 0 16px color-mix(in oklab, var(--b2) 26%, transparent));
+      animation: evBurst 680ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+    .qburst::before{
+      content:"";
+      position:absolute;
+      inset:-22px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--b2) 42%, transparent);
+      opacity: .9;
+      transform: scale(.35);
+      animation: evBurstRing 680ms cubic-bezier(.2,.9,.2,1) forwards;
+    }
+    @keyframes evBurst{
+      0%   { opacity: .0; transform: translate(-50%,-50%) scale(.25); }
+      15%  { opacity: .9; }
+      100% { opacity: 0;  transform: translate(-50%,-50%) scale(5.2); }
+    }
+    @keyframes evBurstRing{
+      0%   { opacity: .0; transform: scale(.25); }
+      18%  { opacity: .95; }
+      100% { opacity: 0;  transform: scale(1.15); }
+    }
+
     .quest-status{
       margin-top: 10px;
       font-size: 12px;
@@ -156,7 +386,10 @@
       border-radius: 999px;
       padding: 10px 12px;
       cursor:pointer;
+      transition: transform .10s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
     }
+    .qbtn:hover{ border-color: var(--line2); box-shadow: 0 12px 26px rgba(0,0,0,.30); }
+    .qbtn:active{ transform: translateY(1px) scale(.99); }
     .qbtn.primary{
       background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
       box-shadow: 0 0 20px rgba(255,255,255,.06);
@@ -181,6 +414,20 @@
       .quest-stage{ min-height: 240px; }
       .quest-actions{ justify-content: stretch; }
       .quest-actions .btn{ flex: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .insight::before,
+      .quest-banner::before,
+      .quest-stage::before,
+      .ev-quest-sigil .ev-spin,
+      .ev-quest-sigil .ev-dash,
+      .ev-quest-sigil .ev-draw,
+      .ev-quest-sigil .ev-core,
+      .qburst,
+      .qburst::before{
+        animation: none !important;
+      }
     }
     .qprogress > div{
       height:100%;
@@ -461,6 +708,13 @@
         <button class="btn" id="questClose" type="button">Close</button>
       </div>
       <p id="questDesc">—</p>
+      <div class="quest-banner" id="questBanner" aria-hidden="true">
+        <div class="quest-sigil" id="questSigil" aria-hidden="true"></div>
+        <div class="quest-scene">
+          <div class="kicker" id="questKicker">Signal Scene</div>
+          <div class="text" id="questSceneText">—</div>
+        </div>
+      </div>
       <div id="questStage" class="quest-stage" aria-label="Mini-quest interaction area"></div>
       <div id="questStatus" class="quest-status" role="status" aria-live="polite"></div>
       <div class="quest-actions">
@@ -471,6 +725,6 @@
     </div>
   </div>
 
-  <script src="./adventure.js?v=20260204-07"></script>
+  <script src="./adventure.js?v=20260204-08"></script>
 </body>
 </html>
