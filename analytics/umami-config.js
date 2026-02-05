@@ -1,6 +1,10 @@
 // analytics/umami-config.js
-// Edit these two values per project/environment.
+// Set values to enable Umami.
+// - url: base URL of your Umami instance (no trailing slash), e.g. https://stats.yourdomain.com
+// - websiteId: your Umami website UUID
+// - domains (optional): comma-separated allowlist, e.g. aerovista-us.github.io
 window.__UMAMI__ = {
-  url: "http://100.115.9.61:8787",          // later: https://stats.yourdomain.com
-  websiteId: "PASTE_WEBSITE_ID_HERE"
+  url: "",
+  websiteId: "",
+  domains: ""
 };

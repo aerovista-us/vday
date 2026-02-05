@@ -18,21 +18,6 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 
-  <!-- Optional Umami analytics (no request unless you set real values). -->
-  <script>
-    (function () {
-      const src = "UMAMI_SCRIPT_URL";
-      const websiteId = "UMAMI_WEBSITE_ID";
-      if (!src || src === "UMAMI_SCRIPT_URL") return;
-      if (!websiteId || websiteId === "UMAMI_WEBSITE_ID") return;
-      const s = document.createElement("script");
-      s.defer = true;
-      s.src = src;
-      s.setAttribute("data-website-id", websiteId);
-      document.head.appendChild(s);
-    })();
-  </script>
-
   <script>
     (function () {
       try {
@@ -52,6 +37,11 @@
       }
     })();
   </script>
+
+  <!-- Optional Umami analytics (set values in analytics/umami-config.js). -->
+  <script src="./analytics/umami-config.js?v=20260204-15"></script>
+  <script src="./analytics/umami-loader.js?v=20260204-15"></script>
+
   <script defer src="./pwa.js?v=20260204-15"></script>
 
   <style>

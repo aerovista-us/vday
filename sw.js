@@ -17,6 +17,8 @@ const PRECACHE_URLS = [
   "./offline.html",
   "./styles.css",
   "./adventure.js",
+  "./analytics/umami-config.js",
+  "./analytics/umami-loader.js",
   "./pwa.js",
   "./album.json",
   "./manifest.webmanifest",
@@ -104,6 +106,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith("/pwa.js") ||
     url.pathname.endsWith("/styles.css") ||
     url.pathname.endsWith("/adventure.js") ||
+    url.pathname.endsWith("/analytics/umami-config.js") ||
+    url.pathname.endsWith("/analytics/umami-loader.js") ||
     url.pathname.endsWith("/album.json") ||
     url.pathname.endsWith("/manifest.webmanifest");
   if (critical) {
