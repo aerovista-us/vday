@@ -6,5 +6,5 @@
 window.__UMAMI__ = {
   url: "",
   websiteId: "",
-  domains: ""
+  domains: "aerovista-us.github.io"
 };
