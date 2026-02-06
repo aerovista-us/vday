@@ -609,7 +609,7 @@
         </defs>
 
         <circle cx="60" cy="60" r="46" fill="none" stroke="url(#${grad})" stroke-width="2.6" opacity=".55"/>
-        <g class="ev-spin">
+        <g class="ev-spin" style="transform-box:fill-box;transform-origin:60px 60px">
           <circle class="ev-dash" cx="60" cy="60" r="46" fill="none" stroke="url(#${grad})" stroke-width="3.4"/>
           <circle cx="60" cy="14" r="2.7" fill="url(#${grad})"/>
           <circle cx="60" cy="14" r="10" fill="url(#${grad})" opacity=".12"/>
@@ -619,7 +619,7 @@
           ${pMarkup}
         </g>
 
-        <g class="ev-core">
+        <g class="ev-core" style="transform-box:fill-box;transform-origin:60px 60px">
           <circle cx="60" cy="60" r="3.2" fill="url(#${grad})" opacity=".90"/>
           <circle cx="60" cy="60" r="11" fill="url(#${grad})" opacity=".10"/>
         </g>
@@ -1566,11 +1566,11 @@ function buildTriangleQuest(){
         val = Math.min(1, val + dt/1.4);
         gracePeriod = 0.3; // Reset grace period while holding
       } else {
-        // Use grace period before reset
+        // Use grace period before decay starts
         if (gracePeriod > 0) {
           gracePeriod = Math.max(0, gracePeriod - dt);
         } else {
-          val = 0;
+          val = Math.max(0, val - dt * 1.8); // Faster decay after grace period
         }
       }
       const p=Math.round(val*100);
@@ -1723,10 +1723,8 @@ function buildTriangleQuest(){
         setCompleteEnabled(false);
       }
       
-      // Update ring visual based on focus state
-      if (armed) {
-        draw();
-      }
+      // Update ring visual (always draw, but inside/outside indicator only when armed)
+      draw();
       
       raf=requestAnimationFrame(step);
     }
