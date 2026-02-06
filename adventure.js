@@ -118,6 +118,7 @@
   const TOTAL_INSIGHTS = 9;
   const PROG_KEY = "echoverseProgress";
   const NOTES_KEY = "echoverseNotes_v1";
+  const STATS_KEY = "echoverseStats_v1"; // Completion times, attempts, etc.
   const modal = $("#questModal");
   const qTitle = $("#questTitle");
   const qDesc = $("#questDesc");
@@ -146,6 +147,8 @@
   let activeInsight = null;
   let cleanupQuest = null;
   let lastFocus = null;
+  const activeCleanups = new Set();
+  let questSetupInProgress = false;
   let notes = (() => {
     try {
       const raw = localStorage.getItem(NOTES_KEY);
@@ -186,7 +189,7 @@
     modal.setAttribute("aria-hidden", "true");
     document.documentElement.classList.remove("ev-modal-open");
     document.body.classList.remove("ev-modal-open");
-    clearStage();
+    clearStage(); // This will run all cleanups
     activeInsight = null;
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
     lastFocus = null;
@@ -196,6 +199,37 @@
   function setStatus(msg){
     if (!qStatus) return;
     qStatus.textContent = msg || "";
+    qStatus.style.color = '';
+  }
+
+  function handleQuestError(error, context){
+    console.error(`Quest error in ${context}:`, error);
+    
+    // Show user-friendly message
+    const errorMsg = getErrorMessage(error);
+    setStatus(`Something went wrong. ${errorMsg}`);
+    if (qStatus) qStatus.style.color = 'var(--accent3)';
+    
+    // Log for debugging (could send to analytics)
+    if (window.evAnalytics) {
+      try {
+        window.evAnalytics.track('quest_error', {
+          context,
+          error: error.message,
+          stack: error.stack
+        });
+      } catch {}
+    }
+  }
+
+  function getErrorMessage(error){
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      return 'Storage is full. Please clear some space.';
+    }
+    if (error.name === 'TypeError') {
+      return 'Quest interaction failed. Try refreshing.';
+    }
+    return 'An unexpected error occurred.';
   }
   function setCompleteEnabled(on){
     if (!qComplete) return;
@@ -204,7 +238,15 @@
     qComplete.style.cursor = on ? "pointer" : "not-allowed";
   }
   function clearStage(){
-    if (cleanupQuest) { try{ cleanupQuest(); }catch(_e){} }
+    // Run all active cleanups
+    activeCleanups.forEach(fn => { 
+      try { fn(); } catch(_e) {} 
+    });
+    activeCleanups.clear();
+    
+    if (cleanupQuest) { 
+      try{ cleanupQuest(); }catch(_e){} 
+    }
     cleanupQuest = null;
     if (qStage) qStage.innerHTML = "";
     setStatus("");
@@ -251,7 +293,32 @@
   }
 
   function persistNotes(){
-    try { localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); } catch {}
+    try { 
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); 
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('Storage quota exceeded for notes');
+        showStorageWarning('notes');
+      }
+    }
+  }
+
+  function showStorageWarning(type){
+    // Show user-friendly warning
+    const msg = type === 'notes' 
+      ? 'Storage is full. Your notes may not be saved. Consider clearing old data or exporting your progress.'
+      : 'Storage is full. Your progress may not be saved. Consider clearing old data.';
+    if (qStatus) {
+      const prev = qStatus.textContent;
+      qStatus.textContent = msg;
+      qStatus.style.color = 'var(--accent3)';
+      setTimeout(() => {
+        if (qStatus) {
+          qStatus.textContent = prev;
+          qStatus.style.color = '';
+        }
+      }, 5000);
+    }
   }
 
   function ensureNoteBadge(card){
@@ -622,13 +689,36 @@
     qBanner.setAttribute("aria-hidden", "false");
   }
 
+  // Touch event validation helper
+  function isValidTouch(e) {
+    // Ignore multi-touch
+    if (e.touches && e.touches.length > 1) return false;
+    // Ignore if target is not the quest stage or its children
+    if (!qStage || !qStage.contains(e.target)) return false;
+    return true;
+  }
+
+  // Touch delay to prevent accidental triggers
+  let lastTouchTime = 0;
+  const TOUCH_DELAY = 100; // ms
+
+  function shouldProcessTouch() {
+    const now = Date.now();
+    if (now - lastTouchTime < TOUCH_DELAY) {
+      return false;
+    }
+    lastTouchTime = now;
+    return true;
+  }
+
   // Ambient click feedback while the modal is open.
   qStage?.addEventListener("pointerdown", (e)=>{
     try{
       if (!modal || !modal.classList.contains("open")) return;
+      if (!isValidTouch(e)) return;
       stageBurstAt(e.clientX, e.clientY);
-    } catch {
-      // ignore
+    } catch (err) {
+      handleQuestError(err, 'ambient_click');
     }
   }, { passive: true });
 
@@ -638,12 +728,12 @@
   function buildGate1AlignSparksQuest(){
     if (!qStage) return ()=>{};
     qStage.innerHTML = `
-      <div class="g1-puzzle" aria-label="Align the sparks puzzle">
+      <div class="g1-puzzle" role="application" aria-label="Align the sparks puzzle">
         <div class="g1-target" aria-hidden="true"></div>
-        <div class="g1-orb" data-orb="1" style="left: 10%; top: 70%;" aria-label="Spark 1" role="button" tabindex="0"></div>
-        <div class="g1-orb" data-orb="2" style="left: 70%; top: 75%;" aria-label="Spark 2" role="button" tabindex="0"></div>
-        <div class="g1-orb" data-orb="3" style="left: 45%; top: 20%;" aria-label="Spark 3" role="button" tabindex="0"></div>
-        <p class="g1-hint">Drag the three sparks into the glowing triangle. Let the shape settle.</p>
+        <div class="g1-orb" data-orb="1" style="left: 10%; top: 70%;" aria-label="Spark 1 - Drag into triangle" role="button" tabindex="0"></div>
+        <div class="g1-orb" data-orb="2" style="left: 70%; top: 75%;" aria-label="Spark 2 - Drag into triangle" role="button" tabindex="0"></div>
+        <div class="g1-orb" data-orb="3" style="left: 45%; top: 20%;" aria-label="Spark 3 - Drag into triangle" role="button" tabindex="0"></div>
+        <p class="g1-hint">Drag the three sparks into the glowing triangle. Let the shape settle. Use arrow keys for keyboard navigation.</p>
       </div>
     `;
 
@@ -679,22 +769,37 @@
       setStatus("Triangle aligned. Signal unlocked.");
       setCompleteEnabled(true);
 
-      // auto-complete after a short delay
+      // auto-complete after a short delay (increased for better UX)
       setTimeout(() => {
         if (!activeInsight) return;
         activeInsight.classList.add("unlocked");
         saveProgress();
         emitInsightUnlocked(activeInsight.dataset.insight || "1");
         closeModal();
-      }, 650);
+      }, 1200);
     }
 
     function checkSolved(){
       const targetRect = rect(target);
-      const allInside = orbs.every(orb => isOrbInsideTarget(rect(orb), targetRect));
-      if (allInside) completeGate1();
-      else {
-        setStatus("Place all three sparks.");
+      const insideCount = orbs.filter(orb => isOrbInsideTarget(rect(orb), targetRect)).length;
+      const allInside = insideCount === 3;
+      
+      if (allInside) {
+        completeGate1();
+      } else {
+        // Show progress
+        if (insideCount > 0) {
+          setStatus(`Place all three sparks. (${insideCount}/3)`);
+          // Small celebration for each orb placed
+          orbs.forEach((orb, i) => {
+            if (isOrbInsideTarget(rect(orb), targetRect) && !orb.dataset.celebrated) {
+              orb.dataset.celebrated = 'true';
+              stageBurstForEl(orb);
+            }
+          });
+        } else {
+          setStatus("Place all three sparks.");
+        }
         setCompleteEnabled(false);
       }
     }
@@ -807,7 +912,7 @@
     qStage.innerHTML = `
       <div class="qhelp"><b>Objective:</b> Rebuild the lens by rotating fragments (90° per tap). When all four lock, the worldview widens.</div>
       <div class="qlensWrap">
-        <div class="qlens" id="lensGrid" aria-label="Lens fragments"></div>
+        <div class="qlens" id="lensGrid" role="group" aria-label="Lens fragments - Tap to rotate each piece 90 degrees"></div>
         <div class="qrow" style="margin-top:10px; justify-content:space-between; align-items:center">
           <span class="qchip">Aligned: <span id="aligned" class="mono">0</span>/4</span>
           <span class="qchip">Tap to rotate</span>
@@ -857,20 +962,39 @@
       if (alignedEl) alignedEl.textContent = String(aligned);
       if (aligned >= 4){
         pieces.forEach(p => p.classList.add("solved"));
-        if (!celebrated) { celebrated = true; celebrateStage(); }
+        if (!celebrated) { 
+          celebrated = true; 
+          celebrateStage(); 
+        }
         setStatus("Lens rebuilt. A wider view appears. Tap Complete to unlock.");
         setCompleteEnabled(true);
       } else {
-        pieces.forEach(p => p.classList.remove("solved"));
-        setStatus("Rotate fragments until the lens aligns.");
+        pieces.forEach(p => {
+          const isAligned = norm(getRot(p)) === 0;
+          p.classList.toggle("solved", isAligned);
+          // Remove solved class if not aligned
+          if (!isAligned) p.classList.remove("solved");
+        });
+        if (aligned > 0) {
+          setStatus(`Rotate fragments until the lens aligns. (${aligned}/4 aligned)`);
+        } else {
+          setStatus("Rotate fragments until the lens aligns.");
+        }
         setCompleteEnabled(false);
       }
     }
 
     function onRotate(e){
       const btn = e.currentTarget;
-      setRot(btn, getRot(btn) + 90);
+      const oldRot = getRot(btn);
+      setRot(btn, oldRot + 90);
       stageBurstAt(e.clientX, e.clientY);
+      
+      // Small celebration when piece aligns
+      if (norm(getRot(btn)) === 0 && norm(oldRot) !== 0) {
+        stageBurstForEl(btn);
+      }
+      
       render();
     }
     pieces.forEach(p => p.addEventListener("click", onRotate));
@@ -1016,25 +1140,73 @@ function buildTriangleQuest(){
 
     qStage.innerHTML = `
       <div class="qhelp"><b>Objective:</b> Tune the dial until the aura stabilizes, then hold steady for 1 full second.</div>
-      <div class="qdial">
-        <div class="qchip">Target: <span class="mono">${target}</span> Hz</div>
-        <input id="dial" type="range" min="40" max="110" value="70" />
-        <div class="qprogress" aria-label="Lock progress"><div id="lockFill"></div></div>
+      <div class="qdial" role="group" aria-label="Frequency tuning">
+        <div class="qrow" style="justify-content:space-between; margin-bottom:8px">
+          <div class="qchip">Target: <span class="mono">${target}</span> Hz</div>
+          <div class="qchip">Current: <span id="currentHz" class="mono" aria-live="polite">70</span> Hz</div>
+        </div>
+        <input id="dial" type="range" min="40" max="110" value="70" aria-label="Frequency dial" aria-valuemin="40" aria-valuemax="110" aria-valuenow="70" />
+        <div class="qrow" style="margin-top:8px; gap:8px">
+          <button class="qbtn" id="fineDown" type="button" aria-label="Decrease frequency by 1 Hz">-1</button>
+          <div class="qprogress" style="flex:1" role="progressbar" aria-label="Lock progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="lockFill"></div></div>
+          <button class="qbtn" id="fineUp" type="button" aria-label="Increase frequency by 1 Hz">+1</button>
+        </div>
       </div>
     `;
     const dial = $("#dial", qStage);
     const fill = $("#lockFill", qStage);
+    const currentHz = $("#currentHz", qStage);
+    const fineDown = $("#fineDown", qStage);
+    const fineUp = $("#fineUp", qStage);
 
+    // Fine adjustment buttons
+    fineDown?.addEventListener("click", () => {
+      dial.value = Math.max(40, Number(dial.value) - 1);
+      dial.dispatchEvent(new Event("input"));
+    });
+    fineUp?.addEventListener("click", () => {
+      dial.value = Math.min(110, Number(dial.value) + 1);
+      dial.dispatchEvent(new Event("input"));
+    });
+
+    // Update current value display
+    dial?.addEventListener("input", () => {
+      const val = String(dial.value);
+      if (currentHz) {
+        currentHz.textContent = val;
+        currentHz.setAttribute('aria-label', `Current frequency: ${val} Hz`);
+      }
+      dial.setAttribute('aria-valuenow', val);
+    });
+
+    let gracePeriod = 0;
     function step(ts){
       if (!last) last=ts;
       const dt = (ts-last)/1000; last=ts;
       const v = Number(dial.value);
       const ok = Math.abs(v - target) <= 2;
-      if (ok && !wasOk) stageBurstForEl(dial);
+      if (ok && !wasOk) {
+        stageBurstForEl(dial);
+        gracePeriod = 0.2; // Grace period when entering range
+      }
       wasOk = ok;
-      if (ok) hold = Math.min(1, hold + dt/1.0);
-      else hold = Math.max(0, hold - dt/0.7);
-      if (fill) fill.style.width = Math.round(hold*100) + "%";
+      
+      if (ok) {
+        hold = Math.min(1, hold + dt/1.0);
+        gracePeriod = 0.2; // Reset grace period while in range
+      } else {
+        // Use grace period before decay starts
+        if (gracePeriod > 0) {
+          gracePeriod = Math.max(0, gracePeriod - dt);
+        } else {
+          hold = Math.max(0, hold - dt/1.5); // Slower decay (was 0.7s, now 1.5s)
+        }
+      }
+      if (fill) {
+        const pct = Math.round(hold*100);
+        fill.style.width = pct + "%";
+        fill.parentElement?.setAttribute('aria-valuenow', String(pct));
+      }
 
       if (hold >= 1){
         if (!celebrated) { celebrated = true; celebrateStage(); }
@@ -1047,7 +1219,12 @@ function buildTriangleQuest(){
       raf = requestAnimationFrame(step);
     }
     raf = requestAnimationFrame(step);
-    return ()=> { if (raf) cancelAnimationFrame(raf); };
+    return ()=> { 
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
   }
 
   function buildPatternBreakQuest(){
@@ -1058,6 +1235,7 @@ function buildTriangleQuest(){
     let hot = -1;
     let running = true;
     let beatTimer = 0;
+    let baseDelay = 1200; // Start at 1200ms, decrease by 50ms each hit
 
     qStage.innerHTML = `
       <div class="qhelp"><b>Objective:</b> Tap the anomaly before it moves. Break the pattern three times without getting pulled into panic.</div>
@@ -1103,6 +1281,8 @@ function buildTriangleQuest(){
     function nextBeat(){
       if (!running) return;
       pickHot();
+      // Progressive timing: start slower, get faster
+      const delay = baseDelay - (hits * 50);
       beatTimer = setTimeout(() => {
         if (!running) return;
         // missed the anomaly
@@ -1110,14 +1290,15 @@ function buildTriangleQuest(){
         if (drain <= 0){
           hits = 0;
           drain = 1;
+          baseDelay = 1200; // Reset timing
           setStatus("Reset. Breathe. Break the pattern without feeding it.");
         } else {
-          setStatus("Don’t chase—wait, then act clean.");
+          setStatus("Don't chase—wait, then act clean.");
         }
         updateUI();
         setCompleteEnabled(false);
         nextBeat();
-      }, 950);
+      }, delay);
     }
 
     function complete(){
@@ -1127,6 +1308,7 @@ function buildTriangleQuest(){
       celebrateStage();
       setStatus("Pattern broken. You keep your power. Tap Complete to unlock.");
       setCompleteEnabled(true);
+      baseDelay = 1200; // Reset for next time
     }
 
     function onTap(e){
@@ -1145,16 +1327,16 @@ function buildTriangleQuest(){
           return;
         }
 
-        setStatus("Good. Break it again.");
+        setStatus(`Good. Break it again. (${hits}/${goal})`);
         setCompleteEnabled(false);
         nextBeat();
         return;
       }
 
-      // wrong node
+      // wrong node - only drain, don't reduce hits as harshly
       drain = Math.max(0, drain - 0.14);
-      hits = Math.max(0, hits - 1);
-      setStatus("That’s the hook. Exit clean.");
+      // Don't reduce hits on wrong tap, just drain energy
+      setStatus("That's the hook. Exit clean.");
       setCompleteEnabled(false);
       updateUI();
     }
@@ -1190,7 +1372,11 @@ function buildTriangleQuest(){
     function size(){
       const r=c.getBoundingClientRect();
       // If the modal isn't visible yet, r will be 0x0. Defer.
-      if (!r.width || !r.height) return;
+      if (!r.width || !r.height) {
+        // Retry after a short delay
+        setTimeout(() => requestAnimationFrame(size), 100);
+        return;
+      }
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       c.width = Math.floor(r.width * dpr);
       c.height = Math.floor(r.height * dpr);
@@ -1224,12 +1410,24 @@ function buildTriangleQuest(){
         ctx.stroke();
 
         if (cutSeg[i]){
-          ctx.lineWidth=2;
-          ctx.strokeStyle="rgba(255,255,255,.10)";
+          // Cut mark - more visible
+          ctx.lineWidth=3;
+          ctx.strokeStyle="rgba(255,255,255,.25)";
           ctx.beginPath();
-          ctx.moveTo(x0+segW/2,y-22);
-          ctx.lineTo(x0+segW/2,y+22);
+          ctx.moveTo(x0+segW/2,y-24);
+          ctx.lineTo(x0+segW/2,y+24);
           ctx.stroke();
+          
+          // Particles at cut point
+          ctx.fillStyle="rgba(255,255,255,.15)";
+          for(let j=0;j<5;j++){
+            const angle = (Math.PI*2*j)/5;
+            const px = x0+segW/2 + Math.cos(angle)*8;
+            const py = y + Math.sin(angle)*8;
+            ctx.beginPath();
+            ctx.arc(px, py, 2, 0, Math.PI*2);
+            ctx.fill();
+          }
         }
       }
 
@@ -1259,8 +1457,9 @@ function buildTriangleQuest(){
       const minY=Math.min(p0.y,p1.y), maxY=Math.max(p0.y,p1.y);
       if (y < minY-10 || y > maxY+10) return;
       const minX=Math.min(p0.x,p1.x), maxX=Math.max(p0.x,p1.x);
-      // must cross at least 40px horizontally
-      if ((maxX-minX) < 40) return;
+      // must cross at least responsive threshold (screen width / 10, min 40px)
+      const threshold = Math.max(40, c.getBoundingClientRect().width / 10);
+      if ((maxX-minX) < threshold) return;
       const midX = (p0.x+p1.x)/2;
       const idx = segForX(midX);
       if (!cutSeg[idx]){
@@ -1270,6 +1469,10 @@ function buildTriangleQuest(){
         try{
           const cr = c.getBoundingClientRect();
           stageBurstAt(cr.left + midX, cr.top + y);
+          // Add haptic feedback if supported
+          if (navigator.vibrate) {
+            navigator.vibrate(50);
+          }
         } catch {}
         draw();
         if (cuts>=3){
@@ -1277,7 +1480,7 @@ function buildTriangleQuest(){
           setStatus("Cord severed. You keep your power.");
           setCompleteEnabled(true);
         } else {
-          setStatus("Good cut. Keep going.");
+          setStatus(`Good cut. Keep going. (${cuts}/3)`);
           setCompleteEnabled(false);
         }
       }
@@ -1302,7 +1505,18 @@ function buildTriangleQuest(){
       e.preventDefault();
     }
 
-    window.addEventListener("resize", size);
+    // Use ResizeObserver for better responsiveness
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(size);
+      });
+      resizeObserver.observe(qStage);
+    } else {
+      // Fallback to window resize
+      window.addEventListener("resize", size);
+    }
+    
     c.addEventListener("pointerdown", down);
     c.addEventListener("pointermove", move);
     c.addEventListener("pointerup", up);
@@ -1314,7 +1528,11 @@ function buildTriangleQuest(){
     setCompleteEnabled(false);
 
     return ()=> {
-      window.removeEventListener("resize", size);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", size);
+      }
       c.removeEventListener("pointerdown", down);
       c.removeEventListener("pointermove", move);
       c.removeEventListener("pointerup", up);
@@ -1337,6 +1555,7 @@ function buildTriangleQuest(){
     const fill=$("#fill", qStage);
     let holding=false, val=0, raf=0, last=0, complete=false;
     let mark = 0;
+    let gracePeriod = 0;
 
     function step(ts){
       if (!last) last=ts;
@@ -1345,17 +1564,26 @@ function buildTriangleQuest(){
         val = 1;
       } else if (holding) {
         val = Math.min(1, val + dt/1.4);
+        gracePeriod = 0.3; // Reset grace period while holding
       } else {
-        val = 0;
+        // Use grace period before reset
+        if (gracePeriod > 0) {
+          gracePeriod = Math.max(0, gracePeriod - dt);
+        } else {
+          val = 0;
+        }
       }
       const p=Math.round(val*100);
       if (pct) pct.textContent=String(p);
-      if (fill) fill.style.width = p+"%";
+      if (fill) {
+        fill.style.width = p+"%";
+        fill.parentElement?.setAttribute('aria-valuenow', String(p));
+      }
       if (!complete && holding && p >= mark + 25){
         mark = Math.min(100, Math.floor(p / 25) * 25);
         stageBurstForEl(btn);
       }
-      if (!holding && !complete && p === 0) mark = 0;
+      if (!holding && !complete && p === 0 && gracePeriod === 0) mark = 0;
       if (p>=100){
         complete = true;
         holding = false;
@@ -1394,7 +1622,12 @@ function buildTriangleQuest(){
     setStatus("Press and hold to ignite. Once lit, you can release and tap Complete.");
     setCompleteEnabled(false);
 
-    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+    return ()=>{ 
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
   }
 
   function buildFocusRingQuest(){
@@ -1417,6 +1650,11 @@ function buildTriangleQuest(){
 
     function size(){
       const r=c.getBoundingClientRect();
+      if (!r.width || !r.height) {
+        // Retry after a short delay
+        setTimeout(() => requestAnimationFrame(size), 100);
+        return;
+      }
       const dpr=Math.min(2, window.devicePixelRatio||1);
       c.width=Math.floor(r.width*dpr);
       c.height=Math.floor(r.height*dpr);
@@ -1428,17 +1666,29 @@ function buildTriangleQuest(){
       const w=c.getBoundingClientRect().width;
       const h=c.getBoundingClientRect().height;
       ctx.clearRect(0,0,w,h);
-      // glow ring
-      ctx.lineWidth=5;
-      ctx.strokeStyle=armed ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.16)";
+      
+      // Outer ring outline for better visibility
+      ctx.lineWidth=2;
+      ctx.strokeStyle="rgba(255,255,255,.12)";
+      ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r+3, 0, Math.PI*2); ctx.stroke();
+      
+      // Main glow ring (thicker for visibility)
+      ctx.lineWidth=6;
+      ctx.strokeStyle=armed ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.22)";
       ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r, 0, Math.PI*2); ctx.stroke();
 
-      // inner
+      // Inner safe zone indicator
       ctx.fillStyle="rgba(0,0,0,.10)";
       ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r-10, 0, Math.PI*2); ctx.fill();
+      
+      // Inside/outside indicator
+      if (armed) {
+        ctx.fillStyle = inside ? "rgba(0,255,0,.15)" : "rgba(255,0,0,.10)";
+        ctx.beginPath(); ctx.arc(ring.x, ring.y, ring.r-8, 0, Math.PI*2); ctx.fill();
+      }
 
-      // flame dot
-      ctx.fillStyle= armed ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.18)";
+      // Flame dot
+      ctx.fillStyle= armed ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.22)";
       ctx.beginPath(); ctx.arc(ring.x, ring.y-ring.r+18, 5, 0, Math.PI*2); ctx.fill();
     }
 
@@ -1459,7 +1709,7 @@ function buildTriangleQuest(){
       } else if (armed && inside) {
         hold = Math.min(3, hold+dt);
       } else {
-        hold = Math.max(0, hold-dt*1.2);
+        hold = Math.max(0, hold-dt*0.8); // Slower decay (was 1.2x)
       }
       if (secEl) secEl.textContent = hold.toFixed(1);
 
@@ -1472,6 +1722,12 @@ function buildTriangleQuest(){
         setStatus(!armed ? "Ignite the sign first." : (inside ? "Hold steady…" : "Stay inside the ring."));
         setCompleteEnabled(false);
       }
+      
+      // Update ring visual based on focus state
+      if (armed) {
+        draw();
+      }
+      
       raf=requestAnimationFrame(step);
     }
 
@@ -1492,7 +1748,18 @@ function buildTriangleQuest(){
       e.preventDefault();
     }
 
-    window.addEventListener("resize", size);
+    // Use ResizeObserver for better responsiveness
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(size);
+      });
+      resizeObserver.observe(qStage);
+    } else {
+      // Fallback to window resize
+      window.addEventListener("resize", size);
+    }
+    
     c.addEventListener("pointerdown", down);
     c.addEventListener("pointermove", move);
     c.addEventListener("pointerup", up);
@@ -1503,7 +1770,11 @@ function buildTriangleQuest(){
     raf=requestAnimationFrame(step);
 
     return ()=>{
-      window.removeEventListener("resize", size);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", size);
+      }
       c.removeEventListener("pointerdown", down);
       c.removeEventListener("pointermove", move);
       c.removeEventListener("pointerup", up);
@@ -1571,7 +1842,12 @@ function buildTriangleQuest(){
     btn.addEventListener("pointercancel", up);
 
     raf=requestAnimationFrame(step);
-    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+    return ()=>{ 
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
   }
 
   function buildCoCreatorQuest(){
@@ -1608,12 +1884,32 @@ function buildTriangleQuest(){
 
   function buildUpliftQuest(){
     if (!qStage) return ()=>{};
+    
+    // Message pool - rotate messages for variety
+    const messagePool = [
+      { id: "seen", text: "I see you. Keep going." },
+      { id: "steady", text: "You're doing better than you think." },
+      { id: "breath", text: "Breathe. One small step is enough." },
+      { id: "light", text: "Your light matters more than you know." },
+      { id: "strength", text: "You have more strength than this moment." },
+      { id: "path", text: "The path appears as you walk it." },
+      { id: "present", text: "You're exactly where you need to be." },
+      { id: "growth", text: "Growth happens in the quiet moments." },
+      { id: "connection", text: "You're not alone in this." }
+    ];
+    
+    // Pick 3 random messages
+    const shuffled = [...messagePool].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 3);
+    
+    const messagesHtml = selected.map(m => 
+      `<button class="qbtn qmsg" data-msg="${m.id}" type="button" aria-pressed="false">${m.text}</button>`
+    ).join('');
+    
     qStage.innerHTML = `
       <div class="qhelp"><b>Objective:</b> Choose a message that brightens a stranger, then hold Send to release it clean.</div>
       <div class="qmsgGrid" style="margin-top:10px">
-        <button class="qbtn qmsg" data-msg="seen" type="button" aria-pressed="false">I see you. Keep going.</button>
-        <button class="qbtn qmsg" data-msg="steady" type="button" aria-pressed="false">You’re doing better than you think.</button>
-        <button class="qbtn qmsg" data-msg="breath" type="button" aria-pressed="false">Breathe. One small step is enough.</button>
+        ${messagesHtml}
       </div>
       <div class="qrow" style="margin-top:10px">
         <button class="qbtn primary" id="send" type="button" disabled>Hold to Send</button>
@@ -1658,14 +1954,17 @@ function buildTriangleQuest(){
       if (complete) {
         val = 1;
       } else if (holding) {
-        val = Math.min(1, val + dt / 0.9);
+        val = Math.min(1, val + dt / 1.3); // Longer hold time (was 0.9s, now 1.3s)
       } else {
         val = Math.max(0, val - dt * 1.8);
       }
 
       const p = Math.round(val * 100);
       if (pct) pct.textContent = String(p);
-      if (fill) fill.style.width = p + "%";
+      if (fill) {
+        fill.style.width = p + "%";
+        fill.parentElement?.setAttribute('aria-valuenow', String(p));
+      }
 
       if (p >= 100){
         complete = true;
@@ -1700,7 +1999,12 @@ function buildTriangleQuest(){
     setStatus("Pick a message.");
     setCompleteEnabled(false);
 
-    return ()=>{ if (raf) cancelAnimationFrame(raf); };
+    return ()=>{ 
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
   }
 
   function buildSequenceQuest(){
@@ -1726,12 +2030,41 @@ function buildTriangleQuest(){
 
     function flash(i){
       sigEls[i].classList.add("active");
-      setTimeout(()=>sigEls[i].classList.remove("active"), 260);
+      setTimeout(()=>sigEls[i].classList.remove("active"), 300);
     }
-    // play sequence
-    let t=0;
-    seq.forEach((s, k)=>{ setTimeout(()=>flash(s), 400 + k*520); t=400 + k*520; });
-    setTimeout(()=>setStatus("Your turn."), t+520);
+    
+    let replayCount = 0;
+    const maxReplays = 2;
+    
+    function playSequence(){
+      let t=0;
+      // Slower timing for better visibility (was 520ms, now 650ms)
+      seq.forEach((s, k)=>{ 
+        setTimeout(()=>flash(s), 400 + k*650); 
+        t=400 + k*650; 
+      });
+      setTimeout(()=>setStatus("Your turn."), t+650);
+    }
+    
+    // Play sequence initially
+    playSequence();
+    
+    // Add replay button
+    const replayBtn = document.createElement("button");
+    replayBtn.className = "qbtn";
+    replayBtn.type = "button";
+    replayBtn.textContent = `Watch Again (${maxReplays - replayCount} left)`;
+    replayBtn.style.marginTop = "10px";
+    replayBtn.disabled = replayCount >= maxReplays;
+    replayBtn.addEventListener("click", () => {
+      if (replayCount >= maxReplays) return;
+      replayCount++;
+      replayBtn.textContent = `Watch Again (${maxReplays - replayCount} left)`;
+      replayBtn.disabled = replayCount >= maxReplays;
+      setStatus("Watch again…");
+      setTimeout(playSequence, 200);
+    });
+    qStage.appendChild(replayBtn);
 
     function onTap(e){
       const el=e.currentTarget;
@@ -1752,7 +2085,12 @@ function buildTriangleQuest(){
       } else {
         idx=0;
         if (stepEl) stepEl.textContent="0";
-        setStatus("Reset. Breathe, then try again.");
+        // Show "almost" feedback if close
+        if (idx > 0) {
+          setStatus(`Almost! You got ${idx} right. Breathe, then try again.`);
+        } else {
+          setStatus("Reset. Breathe, then try again.");
+        }
         setCompleteEnabled(false);
       }
     }
@@ -1765,38 +2103,112 @@ function buildTriangleQuest(){
   }
 
   function setupQuest(insightId){
-    clearStage();
-    const id = String(insightId || "");
-    applyQuestScene(id);
-    renderQuestHud();
-    const unlocked = activeInsight?.classList.contains("unlocked");
-    if (unlocked){
-      setStatus("Already unlocked. You can reset this Signal if you want to replay it.");
-      if (qComplete) qComplete.textContent = "Completed ✓";
-      setCompleteEnabled(false);
-      if (qReset) qReset.style.display = "inline-flex";
-      updateModalNext();
+    // Prevent race conditions
+    if (questSetupInProgress) {
+      console.warn('Quest setup already in progress, ignoring');
       return;
     }
-    switch(id){
-      case "1": cleanupQuest = buildGate1AlignSparksQuest(); break;
-      case "2": cleanupQuest = buildLensRotateQuest(); break;
-      case "3": cleanupQuest = buildTuneQuest(); break;
-      case "4": cleanupQuest = buildPatternBreakQuest(); break;
-      case "5": cleanupQuest = buildHoldChargeQuest(); break;
-      case "6": cleanupQuest = buildSwipeCutQuest(); break;
-      case "7": cleanupQuest = buildFocusRingQuest(); break;
-      case "8": cleanupQuest = buildUpliftQuest(); break;
-      case "9": cleanupQuest = buildSequenceQuest(); break;
-      default:
-        setStatus("Tap Complete when you're ready.");
-        setCompleteEnabled(true);
+    
+    questSetupInProgress = true;
+    
+    try {
+      clearStage();
+      const id = String(insightId || "");
+      applyQuestScene(id);
+      renderQuestHud();
+      const unlocked = activeInsight?.classList.contains("unlocked");
+      if (unlocked){
+        setStatus("Already unlocked. You can reset this Signal if you want to replay it.");
+        if (qComplete) qComplete.textContent = "Completed ✓";
+        setCompleteEnabled(false);
+        if (qReset) qReset.style.display = "inline-flex";
+        updateModalNext();
+        return;
+      }
+      try {
+        // Increment attempt counter when quest starts
+        if (!unlocked) {
+          incrementAttempt(id);
+        }
+        
+        switch(id){
+          case "1": cleanupQuest = buildGate1AlignSparksQuest(); break;
+          case "2": cleanupQuest = buildLensRotateQuest(); break;
+          case "3": cleanupQuest = buildTuneQuest(); break;
+          case "4": cleanupQuest = buildPatternBreakQuest(); break;
+          case "5": cleanupQuest = buildHoldChargeQuest(); break;
+          case "6": cleanupQuest = buildSwipeCutQuest(); break;
+          case "7": cleanupQuest = buildFocusRingQuest(); break;
+          case "8": cleanupQuest = buildUpliftQuest(); break;
+          case "9": cleanupQuest = buildSequenceQuest(); break;
+          default:
+            setStatus("Tap Complete when you're ready.");
+            setCompleteEnabled(true);
+        }
+      } catch (err) {
+        handleQuestError(err, `setup_quest_${id}`);
+        setStatus("Quest failed to load. Try refreshing.");
+        setCompleteEnabled(false);
+      }
+      
+      // Register cleanup if provided
+      if (cleanupQuest) {
+        activeCleanups.add(cleanupQuest);
+      }
+    } finally {
+      questSetupInProgress = false;
     }
   }
 
+  // Load quest statistics
+  let questStats = (() => {
+    try {
+      const raw = localStorage.getItem(STATS_KEY);
+      const obj = JSON.parse(raw || "{}");
+      if (!obj || typeof obj !== "object") return {};
+      return obj;
+    } catch {
+      return {};
+    }
+  })();
+
+  function saveQuestStat(questId, statType, value) {
+    try {
+      const id = String(questId);
+      if (!questStats[id]) questStats[id] = {};
+      questStats[id][statType] = value;
+      questStats[id].lastUpdated = Date.now();
+      localStorage.setItem(STATS_KEY, JSON.stringify(questStats));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('Storage quota exceeded for stats');
+      }
+    }
+  }
+
+  function getQuestStat(questId, statType) {
+    try {
+      return questStats[String(questId)]?.[statType];
+    } catch {
+      return null;
+    }
+  }
+
+  function incrementAttempt(questId) {
+    const current = getQuestStat(questId, 'attempts') || 0;
+    saveQuestStat(questId, 'attempts', current + 1);
+  }
+
   function saveProgress(){
-    const unlocked = $$(".insight.unlocked").map(card => card.dataset.insight);
-    localStorage.setItem(PROG_KEY, JSON.stringify(unlocked));
+    try {
+      const unlocked = $$(".insight.unlocked").map(card => card.dataset.insight);
+      localStorage.setItem(PROG_KEY, JSON.stringify(unlocked));
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn('Storage quota exceeded for progress');
+        showStorageWarning('progress');
+      }
+    }
   }
   function emitProgressUpdate(){
     try{
@@ -1823,11 +2235,51 @@ function buildTriangleQuest(){
     }
   }
   function loadProgress(){
-    const unlocked = JSON.parse(localStorage.getItem(PROG_KEY) || "[]");
-    unlocked.forEach(id=>{
-      const card = $(`.insight[data-insight="${id}"]`);
-      if (card) card.classList.add("unlocked");
-    });
+    try {
+      const raw = localStorage.getItem(PROG_KEY);
+      if (!raw) return;
+      
+      const unlocked = JSON.parse(raw);
+      
+      // Validate data structure
+      if (!Array.isArray(unlocked)) {
+        console.warn('Invalid progress format, resetting');
+        try {
+          localStorage.setItem(PROG_KEY + '_corrupted_backup_' + Date.now(), raw);
+        } catch {}
+        localStorage.removeItem(PROG_KEY);
+        return;
+      }
+      
+      // Validate quest IDs
+      const validIds = unlocked.filter(id => {
+        const num = Number(id);
+        return Number.isInteger(num) && num >= 1 && num <= TOTAL_INSIGHTS;
+      });
+      
+      // Only use valid IDs
+      validIds.forEach(id => {
+        const card = $(`.insight[data-insight="${id}"]`);
+        if (card) card.classList.add("unlocked");
+      });
+      
+      // If data was corrupted, save cleaned version
+      if (validIds.length !== unlocked.length) {
+        saveProgress(); // Save cleaned data
+      }
+    } catch (e) {
+      console.error('Failed to load progress:', e);
+      // Backup corrupted data before clearing
+      try {
+        const raw = localStorage.getItem(PROG_KEY);
+        if (raw) {
+          localStorage.setItem(PROG_KEY + '_corrupted_backup_' + Date.now(), raw);
+        }
+      } catch {}
+      try {
+        localStorage.removeItem(PROG_KEY);
+      } catch {}
+    }
   }
 
   loadProgress();
@@ -1848,37 +2300,48 @@ function buildTriangleQuest(){
       }
     });
     card.addEventListener("click", ()=>{
-      flushNoteDebounce();
-      activeInsight = card;
-      const name = $(".iname", card)?.textContent?.trim() || "Quest";
-      const body = $(".ibody", card)?.textContent?.trim() || "";
-      const questLine = $(".quest", card)?.textContent?.trim() || "Complete the mini-quest.";
-      const objective = questLine.replace(/^Mini-Quest:\\s*/i, "").trim();
-      const trackId = card.getAttribute("data-track") || "";
-      const qCfg = QUESTS[String(card.dataset.insight || "")] || {};
+      try {
+        flushNoteDebounce();
+        activeInsight = card;
+        const name = $(".iname", card)?.textContent?.trim() || "Quest";
+        const body = $(".ibody", card)?.textContent?.trim() || "";
+        const questLine = $(".quest", card)?.textContent?.trim() || "Complete the mini-quest.";
+        const objective = questLine.replace(/^Mini-Quest:\\s*/i, "").trim();
+        const trackId = card.getAttribute("data-track") || "";
+        const qCfg = QUESTS[String(card.dataset.insight || "")] || {};
+        const questId = card.dataset.insight || "";
+        
+        // Show attempt count if available
+        const attempts = getQuestStat(questId, 'attempts') || 0;
+        const completedAt = getQuestStat(questId, 'completedAt');
+        const statsLine = attempts > 0 ? `\n\nAttempts: ${attempts}${completedAt ? ` • Completed: ${new Date(completedAt).toLocaleDateString()}` : ''}` : '';
 
-      if (qTitle) qTitle.textContent = name;
-      if (qDesc) {
-        const lines = [];
-        if (body) lines.push(body);
-        if (objective) lines.push(`Objective: ${objective}`);
-        if (qCfg.tip) lines.push(`Tip: ${qCfg.tip}`);
-        lines.push(trackId ? "Reward: unlock this Signal + jump to the matching track." : "Reward: unlock this Signal + jump back to the player.");
-        qDesc.textContent = lines.filter(Boolean).join("\n\n");
+        if (qTitle) qTitle.textContent = name;
+        if (qDesc) {
+          const lines = [];
+          if (body) lines.push(body);
+          if (objective) lines.push(`Objective: ${objective}`);
+          if (qCfg.tip) lines.push(`Tip: ${qCfg.tip}`);
+          lines.push(trackId ? "Reward: unlock this Signal + jump to the matching track." : "Reward: unlock this Signal + jump back to the player.");
+          if (statsLine) lines.push(statsLine);
+          qDesc.textContent = lines.filter(Boolean).join("\n\n");
+        }
+        renderQuestHud();
+
+        if (qGo){
+          // Still let people jump to the player, even if the gate isn't tied to a specific track
+          qGo.style.display = "inline-flex";
+          qGo.dataset.track = trackId;
+          qGo.textContent = trackId ? "Go to Track" : "Go to Player";
+        }
+
+        // Open first so canvas-based quests can measure correctly
+        loadNoteUI();
+        openModal();
+        requestAnimationFrame(()=> setupQuest(questId));
+      } catch (e) {
+        handleQuestError(e, 'open_quest');
       }
-      renderQuestHud();
-
-      if (qGo){
-        // Still let people jump to the player, even if the gate isn't tied to a specific track
-        qGo.style.display = "inline-flex";
-        qGo.dataset.track = trackId;
-        qGo.textContent = trackId ? "Go to Track" : "Go to Player";
-      }
-
-      // Open first so canvas-based quests can measure correctly
-      loadNoteUI();
-      openModal();
-      requestAnimationFrame(()=> setupQuest(card.dataset.insight));
     });
   });
 
@@ -1915,11 +2378,18 @@ function buildTriangleQuest(){
     if (qComplete?.disabled) return;
     if (!activeInsight) return;
 
+    const questId = activeInsight.dataset.insight || "";
     const wasUnlocked = activeInsight.classList.contains("unlocked");
     if (!wasUnlocked){
       activeInsight.classList.add("unlocked");
       saveProgress();
-      emitInsightUnlocked(activeInsight.dataset.insight || "");
+      
+      // Save completion timestamp and attempts
+      saveQuestStat(questId, 'completedAt', Date.now());
+      const attempts = getQuestStat(questId, 'attempts') || 0;
+      saveQuestStat(questId, 'finalAttempts', attempts);
+      
+      emitInsightUnlocked(questId);
       setStatus("Completed. Star added to your constellation.");
     } else {
       emitProgressUpdate();
@@ -1953,10 +2423,16 @@ function buildTriangleQuest(){
 
   // Reset all progress
   $("#resetAll")?.addEventListener("click", ()=>{
-    if (!confirm("Reset all progress?")) return;
-    localStorage.removeItem(PROG_KEY);
-    $$(".insight.unlocked").forEach(el=>el.classList.remove("unlocked"));
-    emitProgressUpdate();
+    if (!confirm("Reset all progress? This cannot be undone.")) return;
+    try {
+      localStorage.removeItem(PROG_KEY);
+      localStorage.removeItem(STATS_KEY);
+      $$(".insight.unlocked").forEach(el=>el.classList.remove("unlocked"));
+      emitProgressUpdate();
+      setStatus("All progress reset.");
+    } catch (e) {
+      handleQuestError(e, 'reset_all');
+    }
   });
 })();
 
@@ -2360,7 +2836,14 @@ function buildTriangleQuest(){
       }
     }
 
+    let rafId = null;
     function render(now){
+      // Pause when tab is hidden to save resources
+      if (document.hidden) {
+        rafId = null;
+        return;
+      }
+      
       const tt = (now - t0)/1000;
       const dt = clamp((now - lastNow) / 1000, 0, 0.05);
       lastNow = now;
@@ -2371,7 +2854,22 @@ function buildTriangleQuest(){
       updateParticles(dt);
       drawParticleConnections();
       drawParticles();
-      requestAnimationFrame(render);
+      rafId = requestAnimationFrame(render);
+    }
+    
+    // Handle visibility changes
+    function handleVisibilityChange(){
+      if (document.hidden) {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      } else {
+        if (!rafId) {
+          lastNow = performance.now();
+          rafId = requestAnimationFrame(render);
+        }
+      }
     }
 
     function onMove(e){
@@ -2413,9 +2911,10 @@ function buildTriangleQuest(){
       mouse.y = e.touches[0].clientY;
       mouse.has = true;
     }, { passive:true });
+    document.addEventListener("visibilitychange", handleVisibilityChange, { passive:true });
 
     resize();
-    requestAnimationFrame(render);
+    rafId = requestAnimationFrame(render);
   }
 
   if (document.readyState === "loading"){
