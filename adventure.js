@@ -1736,6 +1736,7 @@ function buildTriangleQuest(){
     function move(e){
       if (!armed) return;
       inside = inRing(pt(e));
+      draw(); // Update ring state visually
     }
     function down(e){
       if (!armed) return;
@@ -2479,6 +2480,10 @@ function buildTriangleQuest(){
       try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
       catch { return false; }
     })();
+    const isEmbedded = (() => {
+      try { return window.self !== window.top; }
+      catch { return true; }
+    })();
 
     let w=0,h=0,dpr=1;
     let bgStars=[];
@@ -2838,8 +2843,8 @@ function buildTriangleQuest(){
 
     let rafId = null;
     function render(now){
-      // Pause when tab is hidden to save resources
-      if (document.hidden) {
+      // Pause when tab is hidden (avoid pausing when embedded in overlay)
+      if (document.hidden && !isEmbedded) {
         rafId = null;
         return;
       }
@@ -2859,7 +2864,7 @@ function buildTriangleQuest(){
     
     // Handle visibility changes
     function handleVisibilityChange(){
-      if (document.hidden) {
+      if (document.hidden && !isEmbedded) {
         if (rafId) {
           cancelAnimationFrame(rafId);
           rafId = null;
