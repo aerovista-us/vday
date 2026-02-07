@@ -6,9 +6,10 @@
 // - domains (optional): allowlist (string "a.com,b.com" or array ["a.com","b.com"])
 window.__UMAMI__ = {
   enabled: true,
-  url: "https://aerovista-us.github.io/vday/",
-  websiteId: "EV-gh-vday",
+  url: "https://stats.aerocoreos.com",
+  websiteId: "5f012bc0-4545-474a-a689-19c01818fadc",
   domains: ["aerovista-us.github.io"]
 };
+
 
 
