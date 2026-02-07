@@ -22,4 +22,15 @@ Edit `analytics/umami-config.js`:
 - `progress`: milestone events with `milestone` (25/50/75/95) + track context
 - `track_select`, `restart`, `theme_toggle`, `drawer_open`, `drawer_close`, `view_switch`, `page_view_player`
 
+## Custom events (adventure)
+`v5/adventure.js` emits quest events:
+- Standalone `adventure.html`: events go directly to Umami
+- Embedded Adventure overlay inside `index.html`: events are posted to the parent (so Umami only tracks once)
+
+Events:
+- `quest_open`: `{ quest_id, quest_title, track_id, unlocked, attempts, theme, page_path, embed }`
+- `quest_complete`: `{ quest_id, track_id, attempts?, completed_new, ... }`
+- `quest_reset`: `{ quest_id, ... }`
+- `quest_go`: `{ quest_id, track_id, ... }`
+
 In Umami, use **Pages** for per-page stats, and **Events** to filter/group by `track_title` (or other event properties).

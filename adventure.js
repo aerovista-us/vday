@@ -39,6 +39,28 @@
 
   // ---- Theme (shared with player) ----
   let theme = localStorage.getItem("ev_theme") || "anti";
+  function trackEvent(eventName, data = {}){
+    const name = String(eventName || "").trim();
+    if (!name) return;
+    const payload = {
+      page_path: String(window.location?.pathname || ""),
+      theme,
+      embed: !!isEmbed,
+      ...(data && typeof data === "object" ? data : {})
+    };
+
+    // In embed mode, post analytics up to the parent (Umami loader skips iframes).
+    if (postToParent({ type: "ev:analytics", eventName: name, data: payload })) return;
+
+    try {
+      if (window.umami && typeof window.umami.track === "function") {
+        window.umami.track(name, payload);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   function setTheme(t){
     theme = t;
     document.body.setAttribute("data-theme", theme);
@@ -47,7 +69,10 @@
     if (label) label.textContent = theme === "love" ? "Love" : "Anti-Love";
   }
   setTheme(theme);
-  $("#themeBtn")?.addEventListener("click", ()=> setTheme(theme === "anti" ? "love" : "anti"));
+  $("#themeBtn")?.addEventListener("click", ()=> {
+    setTheme(theme === "anti" ? "love" : "anti");
+    trackEvent("theme_toggle", { theme });
+  });
 
   // In embed mode, don't navigate away from the player; ask parent to close.
   $("#playerLink")?.addEventListener("click", (e)=>{
@@ -2336,6 +2361,13 @@ function buildTriangleQuest(){
 
         // Open first so canvas-based quests can measure correctly
         loadNoteUI();
+        trackEvent("quest_open", {
+          quest_id: String(questId || ""),
+          quest_title: name,
+          track_id: trackId || "",
+          unlocked: !!card.classList.contains("unlocked"),
+          attempts: getQuestStat(questId, 'attempts') || 0
+        });
         openModal();
         requestAnimationFrame(()=> setupQuest(questId));
       } catch (e) {
@@ -2378,6 +2410,7 @@ function buildTriangleQuest(){
     if (!activeInsight) return;
 
     const questId = activeInsight.dataset.insight || "";
+    const trackId = activeInsight.getAttribute("data-track") || "";
     const wasUnlocked = activeInsight.classList.contains("unlocked");
     if (!wasUnlocked){
       activeInsight.classList.add("unlocked");
@@ -2390,10 +2423,21 @@ function buildTriangleQuest(){
       
       emitInsightUnlocked(questId);
       setStatus("Completed. Star added to your constellation.");
+      trackEvent("quest_complete", {
+        quest_id: String(questId || ""),
+        track_id: trackId,
+        attempts,
+        completed_new: true
+      });
     } else {
       emitProgressUpdate();
       celebrateStage();
       setStatus("Already unlocked.");
+      trackEvent("quest_complete", {
+        quest_id: String(questId || ""),
+        track_id: trackId,
+        completed_new: false
+      });
     }
 
     if (qReset) qReset.style.display = "inline-flex";
@@ -2405,6 +2449,7 @@ function buildTriangleQuest(){
   // Reset a single gate
   qReset?.addEventListener("click", ()=>{
     if (!activeInsight) return;
+    trackEvent("quest_reset", { quest_id: String(activeInsight.dataset.insight || "") });
     activeInsight.classList.remove("unlocked");
     saveProgress();
     emitProgressUpdate();
@@ -2414,6 +2459,7 @@ function buildTriangleQuest(){
 
   qGo?.addEventListener("click", ()=>{
     const trackId = qGo.dataset.track || "";
+    trackEvent("quest_go", { quest_id: String(activeInsight?.dataset?.insight || ""), track_id: String(trackId || "") });
     if (trackId) localStorage.setItem("ev_track", trackId);
     closeModal();
     if (postToParent({ type: "ev:go_to_track", trackId })) return;

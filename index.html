@@ -410,6 +410,16 @@
       if (data.type === "ev:go_to_track") {
         closeDrawer("adventureDrawer");
         handleAdventureGoToTrack(data.trackId);
+        return;
+      }
+
+      // Adventure iframe analytics (Umami loader intentionally skips iframes).
+      // The embedded Adventure posts events up to the parent so we can track them once (no double counting).
+      if (data.type === "ev:analytics") {
+        const eventName = String(data.eventName || "").trim();
+        if (!eventName) return;
+        const payload = (data.data && typeof data.data === "object") ? data.data : {};
+        umamiTrack(eventName, { ...payload, from: payload.from || "adventure_embed" });
       }
     });
 
