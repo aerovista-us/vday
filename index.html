@@ -896,6 +896,8 @@
         // Count "track plays" only when we start a track (not resume), and not for whispers.
         if (pendingTrackPlayCount != null && audio.currentTime < 0.25) {
           commitTrackPlayCountIfPending();
+          // Analytics: "track_start" is the clean per-track play metric (excludes resume).
+          umamiTrack("track_start", ctx());
         }
         umamiTrack("play", ctx());
       });
@@ -977,6 +979,7 @@
     function ctx(){
       const tr = album?.tracks?.[idx] || {};
       return {
+        page_path: String(window.location?.pathname || ""),
         album: album?.album_title || "unknown",
         drop: album?.drop_title || "unknown",
         track_id: tr.id || String(idx+1),

@@ -10,6 +10,3 @@ window.__UMAMI__ = {
   websiteId: "5f012bc0-4545-474a-a689-19c01818fadc",
   domains: ["aerovista-us.github.io"]
 };
-
-
-

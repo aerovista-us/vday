@@ -14,3 +14,12 @@ Edit `analytics/umami-config.js`:
 ## Notes
 - The loader skips tracking when embedded in an iframe (prevents overlay embeds from counting as full pageviews).
 - If the site is served over HTTPS, `url` must also be HTTPS (browsers block HTTP analytics scripts as mixed content).
+
+## Custom events (player)
+`v5/index.html` emits custom Umami events so you can break down engagement beyond pageviews:
+- `track_start`: counts a **new track start** (excludes resumes) with `track_id`, `track_title`, `album`, `drop`, `theme`, `page_path`
+- `play` / `pause` / `ended`: playback state events (note: `play` includes resumes)
+- `progress`: milestone events with `milestone` (25/50/75/95) + track context
+- `track_select`, `restart`, `theme_toggle`, `drawer_open`, `drawer_close`, `view_switch`, `page_view_player`
+
+In Umami, use **Pages** for per-page stats, and **Events** to filter/group by `track_title` (or other event properties).
