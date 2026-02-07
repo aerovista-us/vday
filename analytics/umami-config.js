@@ -5,8 +5,9 @@
 // - websiteId: your Umami website UUID
 // - domains (optional): allowlist (string "a.com,b.com" or array ["a.com","b.com"])
 window.__UMAMI__ = {
-  enabled: false,
+  enabled: true,
   url: "",
   websiteId: "",
   domains: ["aerovista-us.github.io"]
 };
+
