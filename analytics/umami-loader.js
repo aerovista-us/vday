@@ -34,6 +34,21 @@
     // ignore
   }
 
+  // Stub + queue so early events (inline scripts) don't get dropped before Umami loads.
+  // This is safe even if Umami isn't reachable; events remain local until the real script initializes.
+  const queueKey = "__UMAMI_QUEUE__";
+  const queue = Array.isArray(window[queueKey]) ? window[queueKey] : [];
+  window[queueKey] = queue;
+
+  const hadTrack = !!(window.umami && typeof window.umami.track === "function");
+  if (!hadTrack) {
+    window.umami = window.umami || {};
+    window.umami.__stub = true;
+    window.umami.track = (eventName, data) => {
+      queue.push([String(eventName || ""), data || {}]);
+    };
+  }
+
   try {
     const existing = document.querySelectorAll("script[data-website-id]");
     for (const el of existing) {
@@ -48,5 +63,21 @@
   s.src = url + "/script.js";
   s.setAttribute("data-website-id", websiteId);
   if (domains) s.setAttribute("data-domains", domains);
+  s.addEventListener("load", () => {
+    try {
+      // If a real Umami script didn't take over, don't re-queue into the stub.
+      if (window.umami && window.umami.__stub) return;
+      if (!window.umami || typeof window.umami.track !== "function") return;
+      if (!Array.isArray(window[queueKey]) || window[queueKey].length === 0) return;
+      const toFlush = window[queueKey].splice(0, window[queueKey].length);
+      for (const item of toFlush) {
+        const name = item && item[0];
+        const data = item && item[1];
+        if (name) window.umami.track(name, data || {});
+      }
+    } catch {
+      // ignore
+    }
+  });
   document.head.appendChild(s);
 })();
