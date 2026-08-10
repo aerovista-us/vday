@@ -7,6 +7,6 @@
 window.__UMAMI__ = {
   enabled: true,
   url: "https://stats.aerocoreos.com",
-  websiteId: "5f012bc0-4545-474a-a689-19c01818fadc",
+  websiteId: "9637ccff-ceb1-4490-a2f5-5809c097e7c3",
   domains: ["aerovista-us.github.io"]
 };
